@@ -15,9 +15,9 @@
  */
 window.TRACKS = [
   // Add your MP3 filenames here, e.g.:
-  // 'Dagon.mp3',
-  // 'Innsmouth Invaders - Confrontation.mp3',
-  // 'Innsmouth Invaders - Onslaught.mp3',
-  // 'Mountains Of Madness - Campsite.mp3',
-  // 'Mountains Of Madness - Ice Cave.mp3',
+  'Dagon.mp3',
+  'Innsmouth Invaders - Confrontation.mp3',
+  'Innsmouth Invaders - Onslaught.mp3',
+  'Mountains Of Madness - Campsite.mp3',
+  'Mountains Of Madness - Ice Cave.mp3',
 ];
