@@ -15,7 +15,9 @@
  */
 window.TRACKS = [
   // Add your MP3 filenames here, e.g.:
-  // 'dagon-theme.mp3',
-  // 'brain-raid-theme.mp3',
-  // 'ambient-underwater.mp3',
+  // 'Dagon.mp3',
+  // 'Innsmouth Invaders - Confrontation.mp3',
+  // 'Innsmouth Invaders - Onslaught.mp3',
+  // 'Mountains Of Madness - Campsite.mp3',
+  // 'Mountains Of Madness - Ice Cave.mp3',
 ];
