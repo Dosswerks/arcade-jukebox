@@ -1,0 +1,2650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Dosswerks Arcade Jukebox</title>
+    <style>
+/* === DOSSWERKS ARCADE JUKEBOX - STYLES === */
+
+/* --- CSS Custom Properties --- */
+:root {
+  /* Neon Theme Colors */
+  --neon-orange: #ff8c00;
+  --neon-gold: #ffaa00;
+  --neon-pink: #ff1493;
+  --neon-blue: #00bfff;
+  --neon-green: #39ff14;
+  --neon-purple: #9b59b6;
+
+  /* Glow variants */
+  --glow-orange: 0 0 10px #ff8c00, 0 0 20px #ff8c0066;
+  --glow-gold: 0 0 8px #ffaa00, 0 0 16px #ffaa0044;
+
+  /* Background */
+  --bg-dark: #0a0a0a;
+  --bg-cabinet: #1a0800;
+  --bg-panel: #111111;
+
+  /* Text */
+  --text-primary: #f0e6d3;
+  --text-secondary: #aa9977;
+
+  /* Z-Index Layers */
+  --z-base: 0;
+  --z-content: 1;
+  --z-bubbles: 2;
+  --z-interactive: 3;
+  --z-overlay: 4;
+  --z-notification: 5;
+}
+
+/* --- Reset --- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: var(--bg-dark);
+  font-family: 'Courier New', monospace;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--text-primary);
+}
+
+/* --- Main Container --- */
+#jukebox {
+  width: 100%; height: 100%;
+  max-width: 480px; margin: 0 auto;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, var(--bg-cabinet) 0%, var(--bg-dark) 15%, var(--bg-dark) 85%, var(--bg-cabinet) 100%);
+  border-left: 5px solid #2a1500;
+  border-right: 5px solid #2a1500;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* --- Bubble Tubes --- */
+.bubble-tube {
+  position: absolute; top: 0; bottom: 0; width: 30px;
+  pointer-events: none; z-index: var(--z-bubbles);
+  overflow: hidden;
+  background: rgba(255,140,0,0.02);
+  border: 1px solid rgba(255,140,0,0.12);
+}
+.bubble-tube--left { left: 0; }
+.bubble-tube--right { right: 0; }
+
+.bubble {
+  position: absolute; bottom: -20px; border-radius: 50%;
+  will-change: transform, opacity;
+  animation: bubble-rise linear infinite;
+}
+
+@keyframes bubble-rise {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.7; }
+  25% { transform: translateY(-25vh) translateX(6px) scale(1.1); opacity: 0.85; }
+  50% { transform: translateY(-50vh) translateX(-4px) scale(0.95); opacity: 0.7; }
+  75% { transform: translateY(-75vh) translateX(5px) scale(1.05); opacity: 0.5; }
+  100% { transform: translateY(-105vh) translateX(-2px) scale(0.7); opacity: 0; }
+}
+
+/* --- Arch Section (Top) --- */
+#arch {
+  flex: 0 0 auto;
+  min-height: 200px;
+  padding: 16px 40px 12px;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center;
+  position: relative; z-index: var(--z-content);
+  background: radial-gradient(ellipse at 50% 20%, rgba(255,140,0,0.06) 0%, transparent 70%);
+  border-bottom: 2px solid rgba(255,140,0,0.3);
+  border-radius: 0 0 50% 50% / 0 0 8% 8%;
+}
+
+#arch-title {
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--neon-orange);
+  text-shadow: var(--glow-orange);
+  margin-bottom: 12px;
+}
+
+/* --- Vinyl Record --- */
+#vinyl-container {
+  position: relative; width: 120px; height: 120px;
+  margin: 8px 0;
+}
+
+#vinyl {
+  width: 100%; height: 100%; border-radius: 50%;
+  background: radial-gradient(circle,
+    #222 0%, #111 20%, #222 21%, #111 40%,
+    #222 41%, #111 60%, #222 61%, #111 80%,
+    #1a1a1a 81%, #0d0d0d 100%
+  );
+  border: 3px solid #333;
+  box-shadow: 0 0 15px rgba(255,140,0,0.2), inset 0 0 30px rgba(0,0,0,0.8);
+  will-change: transform;
+  animation: vinyl-spin 3s linear infinite;
+  animation-play-state: paused;
+}
+
+#vinyl-label {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px; height: 40px; border-radius: 50%;
+  background: radial-gradient(circle, var(--neon-orange) 0%, #8b4500 60%, #4a2500 100%);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 8px rgba(255,140,0,0.4);
+}
+
+#vinyl-label::after {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: #111; border: 1px solid #333;
+}
+
+@keyframes vinyl-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Now Playing --- */
+#now-playing {
+  font-size: 13px; color: var(--text-primary);
+  text-align: center; margin-top: 8px;
+  max-width: 100%; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+  min-height: 18px;
+}
+
+/* --- Song List --- */
+#song-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 8px 36px;
+  z-index: var(--z-content);
+}
+
+.song-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid rgba(255,140,0,0.06);
+}
+
+.song-item:hover {
+  background: rgba(255,140,0,0.08);
+}
+
+.song-item--active {
+  background: rgba(255,140,0,0.12);
+  box-shadow: inset 0 0 12px rgba(255,140,0,0.1), 0 0 6px rgba(255,140,0,0.15);
+}
+
+.song-item--active .song-title {
+  color: var(--neon-orange);
+  text-shadow: 0 0 6px rgba(255,140,0,0.4);
+}
+
+.song-item--selected {
+  outline: 2px solid var(--neon-orange);
+  outline-offset: -2px;
+}
+
+.song-number {
+  font-size: 11px; color: var(--text-secondary);
+  min-width: 20px;
+}
+
+.song-title {
+  font-size: 13px; color: var(--text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* --- Controls Bar --- */
+#controls {
+  flex: 0 0 auto;
+  padding: 10px 36px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: var(--z-content);
+  background: linear-gradient(0deg, rgba(26,8,0,0.9) 0%, transparent 100%);
+  border-top: 1px solid rgba(255,140,0,0.2);
+}
+
+/* Progress Bar */
+#progress-container {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px;
+}
+
+#progress-bar {
+  flex: 1; height: 6px; border-radius: 3px;
+  background: #222; position: relative;
+  cursor: pointer; touch-action: none;
+  min-height: 44px;
+  display: flex; align-items: center;
+}
+
+#progress-bar-inner {
+  height: 6px; width: 100%; border-radius: 3px;
+  background: #222; position: relative; overflow: hidden;
+}
+
+#progress-fill {
+  height: 100%; width: 0%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--neon-orange), var(--neon-gold));
+  box-shadow: 0 0 4px rgba(255,140,0,0.4);
+  transition: width 0.1s linear;
+}
+
+#progress-bar.buffering #progress-fill {
+  animation: buffering-pulse 1s ease-in-out infinite;
+}
+
+@keyframes buffering-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.time-display {
+  font-size: 10px; color: var(--text-secondary);
+  min-width: 32px; text-align: center;
+}
+
+/* Transport Controls */
+#transport {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; margin-bottom: 8px;
+}
+
+.transport-btn {
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid rgba(255,140,0,0.3);
+  border-radius: 50%; color: var(--text-primary);
+  font-size: 18px; cursor: pointer;
+  transition: all 0.15s;
+}
+
+.transport-btn:hover, .transport-btn:focus-visible {
+  border-color: var(--neon-orange);
+  box-shadow: var(--glow-orange);
+}
+
+.transport-btn--play {
+  width: 52px; height: 52px; font-size: 22px;
+  border-color: var(--neon-orange);
+}
+
+/* Mode Controls */
+#mode-controls {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+}
+
+.mode-btn {
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid rgba(255,140,0,0.15);
+  border-radius: 8px; color: var(--text-secondary);
+  font-size: 16px; cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mode-btn:hover, .mode-btn:focus-visible {
+  border-color: var(--neon-orange);
+  color: var(--text-primary);
+}
+
+.mode-btn.active {
+  border-color: var(--neon-orange);
+  color: var(--neon-orange);
+  box-shadow: 0 0 6px rgba(255,140,0,0.2);
+}
+
+/* Volume */
+#volume-container {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 8px;
+}
+
+#volume-slider {
+  flex: 1; height: 44px;
+  -webkit-appearance: none; appearance: none;
+  background: transparent; cursor: pointer;
+}
+
+#volume-slider::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--neon-orange), #333);
+}
+
+#volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--neon-orange);
+  margin-top: -6px;
+  box-shadow: 0 0 6px rgba(255,140,0,0.5);
+}
+
+.mute-btn {
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none;
+  color: var(--text-secondary); font-size: 18px;
+  cursor: pointer;
+}
+
+.mute-btn.muted { color: #555; }
+
+/* --- Loading Overlay --- */
+#loading-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: var(--bg-dark);
+  z-index: var(--z-overlay);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+#loading-overlay.visible {
+  opacity: 1; pointer-events: auto;
+}
+
+.loading-text {
+  color: var(--neon-orange);
+  text-shadow: var(--glow-orange);
+  font-size: 14px; letter-spacing: 1px;
+  animation: loading-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loading-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* --- Toast Notification --- */
+#toast {
+  position: absolute;
+  bottom: 120px; left: 50%; transform: translateX(-50%) translateY(20px);
+  padding: 10px 20px; border-radius: 8px;
+  background: rgba(30,10,0,0.95);
+  border: 1px solid rgba(255,140,0,0.4);
+  color: var(--text-primary); font-size: 12px;
+  z-index: var(--z-notification);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  max-width: 80%; text-align: center;
+}
+
+#toast.visible {
+  opacity: 1; transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+/* --- Empty Library --- */
+.empty-library {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; color: var(--text-secondary);
+  font-size: 14px; text-align: center;
+  padding: 20px;
+}
+
+/* --- Focus States --- */
+:focus-visible {
+  outline: 2px solid var(--neon-orange);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* --- Accessibility: Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --- Responsive: Landscape --- */
+@media (orientation: landscape) and (max-height: 500px) {
+  #arch { min-height: 120px; padding: 8px 40px; }
+  #vinyl-container { width: 80px; height: 80px; }
+  #arch-title { font-size: 9px; margin-bottom: 6px; }
+  #now-playing { font-size: 11px; }
+  #song-list { padding: 4px 36px; }
+  .song-item { padding: 6px 12px; min-height: 36px; }
+  #controls { padding: 6px 36px; }
+}
+
+@media (orientation: landscape) {
+  #jukebox {
+    padding-left: max(env(safe-area-inset-left), 40px);
+    padding-right: max(env(safe-area-inset-right), 40px);
+  }
+}
+
+/* --- Responsive: Tablet --- */
+@media (min-width: 768px) and (max-width: 1024px) {
+  #jukebox { max-width: 480px; }
+}
+
+/* --- Responsive: Desktop --- */
+@media (min-width: 1025px) {
+  body {
+    background: radial-gradient(ellipse at 50% 50%, #1a0800 0%, #0a0a0a 60%);
+  }
+  #jukebox {
+    max-width: 480px;
+    border-radius: 20px;
+    margin-top: 20px;
+    height: calc(100% - 40px);
+    box-shadow: 0 0 40px rgba(255,140,0,0.1), 0 20px 60px rgba(0,0,0,0.5);
+  }
+}
+
+/* --- Screen Reader Only --- */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+    </style>
+</head>
+<body>
+<div id="jukebox">
+    <!-- Bubble Tubes -->
+    <div class="bubble-tube bubble-tube--left" id="bubble-left" aria-hidden="true"></div>
+    <div class="bubble-tube bubble-tube--right" id="bubble-right" aria-hidden="true"></div>
+
+    <!-- Arch Section (Top) -->
+    <div id="arch">
+        <div id="arch-title">Dosswerks Arcade Jukebox</div>
+        <div id="vinyl-container">
+            <div id="vinyl" aria-hidden="true">
+                <div id="vinyl-label"></div>
+            </div>
+        </div>
+        <div id="now-playing" aria-live="polite">Select a track...</div>
+    </div>
+
+    <!-- Song List -->
+    <div id="song-list"></div>
+
+    <!-- Controls Bar -->
+    <div id="controls">
+        <!-- Progress -->
+        <div id="progress-container">
+            <span class="time-display" id="elapsed-time">0:00</span>
+            <div id="progress-bar" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div id="progress-bar-inner">
+                    <div id="progress-fill"></div>
+                </div>
+            </div>
+            <span class="time-display" id="total-time">0:00</span>
+        </div>
+
+        <!-- Transport -->
+        <div id="transport">
+            <button class="transport-btn" id="btn-prev" aria-label="Previous track">⏮</button>
+            <button class="transport-btn transport-btn--play" id="btn-play" aria-label="Play">▶</button>
+            <button class="transport-btn" id="btn-next" aria-label="Next track">⏭</button>
+        </div>
+
+        <!-- Mode Controls -->
+        <div id="mode-controls">
+            <button class="mode-btn" id="btn-loop" aria-label="Playback mode: play-through">▶️</button>
+            <button class="mode-btn" id="btn-shuffle" aria-label="Shuffle: off">🔀</button>
+        </div>
+
+        <!-- Volume -->
+        <div id="volume-container">
+            <button class="mute-btn" id="btn-mute" aria-label="Mute">🔊</button>
+            <input type="range" id="volume-slider" min="0" max="100" value="100"
+                   aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" aria-hidden="true">
+        <span class="loading-text">Loading Library...</span>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" role="alert" aria-live="assertive" aria-hidden="true"></div>
+
+    <!-- Screen Reader Announcements -->
+    <div id="sr-announcements" class="sr-only" aria-live="polite"></div>
+</div>
+<script src="tracks.js"></script>
+    <script>
+    (function() {
+    'use strict';
+
+    // === TITLE DERIVER ===
+/**
+ * Title Deriver
+ * Derives a human-readable display title from an MP3 filename.
+ *
+ * Rules:
+ *   1. Remove .mp3 extension (case-insensitive)
+ *   2. Replace hyphens and underscores with spaces
+ *   3. Capitalize first letter of each word
+ *
+ * Examples:
+ *   "song-title.mp3" → "Song Title"
+ *   "ambient_underwater.mp3" → "Ambient Underwater"
+ */
+
+/**
+ * @param {string} filename - Raw MP3 filename (e.g., "ambient_underwater.mp3")
+ * @returns {string} Display title (e.g., "Ambient Underwater")
+ */
+function deriveTitle(filename) {
+  return filename
+    .replace(/\.mp3$/i, '')       // Remove extension
+    .replace(/[-_]/g, ' ')        // Replace hyphens/underscores with spaces
+    .toLowerCase()                // Normalize to lowercase first
+    .replace(/\b\w/g, (c) => c.toUpperCase()); // Capitalize first letter of each word
+}
+
+    // === NATURAL SORT ===
+/**
+ * Natural Sort
+ * Sorts an array of TrackInfo objects by display title using
+ * case-insensitive natural numeric sorting.
+ *
+ * Uses String.prototype.localeCompare with numeric and base sensitivity
+ * options for proper natural ordering (e.g., "Track 2" before "Track 10").
+ *
+ * @param {Array<{title: string}>} tracks - Unsorted track array
+ * @returns {Array<{title: string}>} Sorted track array (new array, no mutation)
+ */
+function naturalSort(tracks) {
+  return [...tracks].sort((a, b) =>
+    a.title.localeCompare(b.title, undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    })
+  );
+}
+
+    // === URL PARSER ===
+/**
+ * URL Parser
+ * Parses deep-link query parameters from the current URL.
+ *
+ * Supports:
+ *   ?track=<filename>  - Auto-select a specific track
+ *   ?game=<game-name>  - Filter song list by game prefix
+ *
+ * @returns {{ track: string | null, game: string | null }}
+ */
+function parseQueryParams() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    track: params.get('track') || null,
+    game: params.get('game') || null,
+  };
+}
+
+    // === DOM SANITIZATION ===
+/**
+ * DOM Sanitization
+ * Safely renders text content into the DOM without HTML injection risk.
+ *
+ * Uses textContent assignment pattern — never innerHTML with user data.
+ * Handles filenames containing special characters (angle brackets,
+ * ampersands, quotes) without rendering errors.
+ *
+ * @param {string} text - Raw text to render safely
+ * @returns {HTMLSpanElement} A span element with the text as textContent
+ */
+function escapeForDOM(text) {
+  const span = document.createElement('span');
+  span.textContent = text;
+  return span;
+}
+
+/**
+ * Sets text content on an existing element safely.
+ * @param {HTMLElement} element - Target DOM element
+ * @param {string} text - Raw text to set
+ */
+function setTextSafe(element, text) {
+  element.textContent = text;
+}
+
+    // === TIME FORMATTER ===
+/**
+ * Time Formatter
+ * Converts a non-negative number of seconds to M+:SS display format.
+ *
+ * Examples:
+ *   0 → "0:00"
+ *   65 → "1:05"
+ *   3661 → "61:01"
+ *
+ * @param {number} seconds - Non-negative integer seconds
+ * @returns {string} Formatted time string in M+:SS format
+ */
+function formatTime(seconds) {
+  const totalSeconds = Math.max(0, Math.floor(seconds));
+  const minutes = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
+    // === GAME FILTER ===
+/**
+ * Game Prefix Filter
+ * Filters a TrackInfo array by filename prefix (case-insensitive).
+ *
+ * Used for the ?game= deep-link parameter to show only tracks
+ * from a specific game.
+ *
+ * If no tracks match the prefix, returns the full unfiltered array
+ * (per Requirement 10.7).
+ *
+ * @param {Array<{filename: string}>} tracks - Array of TrackInfo objects
+ * @param {string} prefix - Game name prefix to filter by
+ * @returns {Array<{filename: string}>} Filtered array, or full array if no matches
+ */
+function filterByGamePrefix(tracks, prefix) {
+  if (!prefix) {
+    return tracks;
+  }
+
+  const lowerPrefix = prefix.toLowerCase();
+  const filtered = tracks.filter((track) =>
+    track.filename.toLowerCase().startsWith(lowerPrefix)
+  );
+
+  // If no tracks match, return the full unfiltered list
+  return filtered.length > 0 ? filtered : tracks;
+}
+
+    // === PERSISTENCE MANAGER ===
+/**
+ * Persistence Manager
+ * Reads/writes playback preferences to localStorage.
+ * Gracefully handles unavailable localStorage, quota errors,
+ * private browsing, malformed data, and schema version mismatches.
+ */
+
+const STORAGE_KEY = 'dosswerks-jukebox-state';
+const STORAGE_VERSION = 1;
+
+class PersistenceManager {
+  constructor() {
+    this._available = null; // lazy-checked
+  }
+
+  /**
+   * Check if localStorage is available and writable.
+   * @returns {boolean}
+   */
+  isAvailable() {
+    if (this._available !== null) {
+      return this._available;
+    }
+    try {
+      const testKey = '__jukebox_test__';
+      localStorage.setItem(testKey, '1');
+      localStorage.removeItem(testKey);
+      this._available = true;
+    } catch (e) {
+      this._available = false;
+    }
+    return this._available;
+  }
+
+  /**
+   * Save playback state to localStorage.
+   * @param {{ lastTrack: string|null, volume: number, mode: string, shuffleEnabled: boolean }} state
+   */
+  save(state) {
+    if (!this.isAvailable()) return;
+
+    const data = JSON.stringify({
+      version: STORAGE_VERSION,
+      lastTrack: state.lastTrack,
+      volume: state.volume,
+      mode: state.mode,
+      shuffleEnabled: state.shuffleEnabled,
+    });
+
+    try {
+      localStorage.setItem(STORAGE_KEY, data);
+    } catch (e) {
+      if (e.name === 'QuotaExceededError') {
+        // Clear old jukebox data and retry once
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.setItem(STORAGE_KEY, data);
+        } catch (retryError) {
+          // Give up — disable persistence for this session
+          this._available = false;
+        }
+      } else {
+        // Private browsing or other error — disable silently
+        this._available = false;
+      }
+    }
+  }
+
+  /**
+   * Load persisted state from localStorage.
+   * @returns {{ lastTrack: string|null, volume: number, mode: string, shuffleEnabled: boolean } | null}
+   */
+  load() {
+    if (!this.isAvailable()) return null;
+
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+
+      const parsed = JSON.parse(raw);
+
+      // Schema version check
+      if (!parsed || parsed.version !== STORAGE_VERSION) {
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+      }
+
+      return {
+        lastTrack: parsed.lastTrack || null,
+        volume: typeof parsed.volume === 'number' ? parsed.volume : 1.0,
+        mode: parsed.mode || 'play-through',
+        shuffleEnabled: !!parsed.shuffleEnabled,
+      };
+    } catch (e) {
+      // Malformed JSON — discard
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (removeError) {
+        // ignore
+      }
+      return null;
+    }
+  }
+
+  /**
+   * No-op — included for consistent lifecycle interface.
+   */
+  destroy() {}
+}
+
+    // === PLAYBACK STATE MACHINE ===
+/**
+ * Playback State Machine
+ * Determines what happens when a track ends.
+ *
+ * Mode precedence: Loop One > Loop All > Play Through > Stop
+ * Shuffle is orthogonal — it affects index resolution but not mode logic.
+ */
+
+class PlaybackStateMachine {
+  constructor() {
+    this._mode = 'play-through'; // default mode
+  }
+
+  /**
+   * Set the active playback mode.
+   * @param {'loop-one' | 'loop-all' | 'play-through' | 'stop'} mode
+   */
+  setMode(mode) {
+    this._mode = mode;
+  }
+
+  /**
+   * Get the current playback mode.
+   * @returns {'loop-one' | 'loop-all' | 'play-through' | 'stop'}
+   */
+  getMode() {
+    return this._mode;
+  }
+
+  /**
+   * Determine the action to take when a track ends.
+   *
+   * @param {number} currentIndex - Index of the track that just finished
+   * @param {number} totalTracks - Total number of tracks in the playlist
+   * @param {object} [shuffleEngine] - Optional ShuffleEngine for index resolution
+   * @returns {{ action: 'play', index: number } | { action: 'stop' }}
+   */
+  onTrackEnd(currentIndex, totalTracks, shuffleEngine) {
+    if (totalTracks <= 0) {
+      return { action: 'stop' };
+    }
+
+    // Loop One: always restart the same track (highest precedence)
+    if (this._mode === 'loop-one') {
+      return { action: 'play', index: currentIndex };
+    }
+
+    // Stop mode: always stop
+    if (this._mode === 'stop') {
+      return { action: 'stop' };
+    }
+
+    // For Loop All and Play Through, determine the next index
+    let nextIndex;
+
+    if (shuffleEngine) {
+      // In shuffle mode, advance through the shuffled order
+      const currentPosition = shuffleEngine.getPositionOf(currentIndex);
+      const nextPosition = currentPosition + 1;
+
+      if (nextPosition >= shuffleEngine.getLength()) {
+        // Reached end of shuffled order
+        if (this._mode === 'loop-all') {
+          // Reshuffle and start from position 0
+          shuffleEngine.reshuffle();
+          nextIndex = shuffleEngine.getTrackAt(0);
+        } else {
+          // Play Through: stop at end
+          return { action: 'stop' };
+        }
+      } else {
+        nextIndex = shuffleEngine.getTrackAt(nextPosition);
+      }
+    } else {
+      // Sequential mode
+      nextIndex = currentIndex + 1;
+
+      if (nextIndex >= totalTracks) {
+        if (this._mode === 'loop-all') {
+          nextIndex = 0; // Wrap to beginning
+        } else {
+          // Play Through: stop at end
+          return { action: 'stop' };
+        }
+      }
+    }
+
+    return { action: 'play', index: nextIndex };
+  }
+}
+
+    // === SHUFFLE ENGINE ===
+/**
+ * Shuffle Engine (Fisher-Yates)
+ * Generates and manages a pre-shuffled index array.
+ * Supports deterministic forward/backward navigation within the shuffled order.
+ */
+
+class ShuffleEngine {
+  /**
+   * @param {number} trackCount - Total number of tracks to shuffle
+   */
+  constructor(trackCount) {
+    this._trackCount = trackCount;
+    this._order = [];
+    this.reshuffle();
+  }
+
+  /**
+   * Generates a new shuffled order using Fisher-Yates algorithm.
+   */
+  reshuffle() {
+    this._order = Array.from({ length: this._trackCount }, (_, i) => i);
+    for (let i = this._trackCount - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this._order[i], this._order[j]] = [this._order[j], this._order[i]];
+    }
+  }
+
+  /**
+   * Returns the track index at the given position in shuffled order.
+   * @param {number} position - Position in the shuffled sequence (0-based)
+   * @returns {number} Track index at that position
+   */
+  getTrackAt(position) {
+    if (position < 0 || position >= this._trackCount) {
+      return -1;
+    }
+    return this._order[position];
+  }
+
+  /**
+   * Returns the shuffled position for a given track index.
+   * @param {number} trackIndex - Original track index
+   * @returns {number} Position in the shuffled order (-1 if not found)
+   */
+  getPositionOf(trackIndex) {
+    return this._order.indexOf(trackIndex);
+  }
+
+  /**
+   * Returns total number of tracks.
+   * @returns {number}
+   */
+  getLength() {
+    return this._trackCount;
+  }
+
+  /**
+   * Returns the full shuffled index array (for testing/debugging).
+   * @returns {number[]}
+   */
+  getOrder() {
+    return [...this._order];
+  }
+}
+
+    // === AUDIO PIPELINE ===
+/**
+ * Audio Pipeline
+ * Manages the audio graph: HTMLAudioElement → Web Audio API GainNode → destination.
+ * Falls back to plain HTMLAudioElement if Web Audio API is unavailable.
+ *
+ * Implements peak normalization:
+ *   - Measures peak amplitude from first few seconds of audio
+ *   - Calculates targetGain = referenceLevel / measuredPeak
+ *   - Caches gain values per filename in memory
+ */
+
+const REFERENCE_LEVEL = 0.8;
+
+class AudioPipeline {
+  constructor() {
+    this._context = null;
+    this._gainNode = null;
+    this._sourceNode = null;
+    this._analyser = null;
+    this._webAudioAvailable = false;
+    this._gainCache = new Map(); // filename → gain value
+    this._currentVolume = 1.0;
+    this._currentGain = 1.0;
+
+    this._initWebAudio();
+  }
+
+  _initWebAudio() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        this._context = new AudioCtx();
+        this._gainNode = this._context.createGain();
+        this._analyser = this._context.createAnalyser();
+        this._analyser.fftSize = 2048;
+        this._gainNode.connect(this._context.destination);
+        this._webAudioAvailable = true;
+      }
+    } catch (e) {
+      this._webAudioAvailable = false;
+    }
+  }
+
+  /**
+   * Connect an HTMLAudioElement to the Web Audio graph.
+   * @param {HTMLAudioElement} audioElement
+   */
+  connect(audioElement) {
+    if (!this._webAudioAvailable || !this._context) return;
+
+    // Resume context if suspended (required after user gesture)
+    if (this._context.state === 'suspended') {
+      this._context.resume();
+    }
+
+    // Disconnect previous source if any
+    if (this._sourceNode) {
+      try {
+        this._sourceNode.disconnect();
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    try {
+      this._sourceNode = this._context.createMediaElementSource(audioElement);
+      this._sourceNode.connect(this._analyser);
+      this._analyser.connect(this._gainNode);
+    } catch (e) {
+      // If element already connected, just update gain
+    }
+  }
+
+  /**
+   * Set normalization gain (0.0 - 2.0).
+   * @param {number} value
+   */
+  setGain(value) {
+    this._currentGain = value;
+    if (this._gainNode) {
+      this._gainNode.gain.value = value * this._currentVolume;
+    }
+  }
+
+  /**
+   * Set user volume (0.0 - 1.0).
+   * @param {number} value
+   */
+  setVolume(value) {
+    this._currentVolume = value;
+    if (this._gainNode) {
+      this._gainNode.gain.value = this._currentGain * value;
+    }
+  }
+
+  /**
+   * Get cached gain for a filename, or null if not yet measured.
+   * @param {string} filename
+   * @returns {number|null}
+   */
+  getCachedGain(filename) {
+    return this._gainCache.has(filename) ? this._gainCache.get(filename) : null;
+  }
+
+  /**
+   * Measure peak amplitude and cache the normalization gain.
+   * Should be called after a few seconds of playback.
+   * @param {string} filename
+   */
+  measureAndCacheGain(filename) {
+    if (!this._analyser || this._gainCache.has(filename)) return;
+
+    const dataArray = new Float32Array(this._analyser.fftSize);
+    this._analyser.getFloatTimeDomainData(dataArray);
+
+    let peak = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      const abs = Math.abs(dataArray[i]);
+      if (abs > peak) peak = abs;
+    }
+
+    // Avoid division by zero; if peak is very low, use gain of 1.0
+    const gain = peak > 0.01 ? REFERENCE_LEVEL / peak : 1.0;
+    // Clamp gain to reasonable range
+    const clampedGain = Math.min(Math.max(gain, 0.5), 2.0);
+    this._gainCache.set(filename, clampedGain);
+    this.setGain(clampedGain);
+  }
+
+  /**
+   * @returns {AudioContext|null}
+   */
+  getContext() {
+    return this._context;
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  isWebAudioAvailable() {
+    return this._webAudioAvailable;
+  }
+
+  /**
+   * Close AudioContext and disconnect all nodes.
+   */
+  destroy() {
+    if (this._sourceNode) {
+      try { this._sourceNode.disconnect(); } catch (e) {}
+    }
+    if (this._analyser) {
+      try { this._analyser.disconnect(); } catch (e) {}
+    }
+    if (this._gainNode) {
+      try { this._gainNode.disconnect(); } catch (e) {}
+    }
+    if (this._context && this._context.state !== 'closed') {
+      this._context.close().catch(() => {});
+    }
+    this._sourceNode = null;
+    this._analyser = null;
+    this._gainNode = null;
+    this._context = null;
+    this._webAudioAvailable = false;
+  }
+}
+
+    // === ID3 PARSER ===
+/**
+ * ID3v2 Parser
+ * Lightweight inline parser that reads the Title field from embedded
+ * ID3v2 metadata in MP3 files.
+ *
+ * This is a BEST-EFFORT, HTTPS-ONLY enhancement.
+ * On file:// protocol or any fetch failure, returns null silently.
+ */
+
+/**
+ * Reads the first ~10KB of an MP3 file and extracts the Title field
+ * from ID3v2 headers if present.
+ *
+ * @param {string} url - Relative URL to the MP3 file (e.g., "assets/song.mp3")
+ * @returns {Promise<string|null>} Title string or null if not found/not attempted
+ */
+async function parseID3Title(url) {
+  // Early bail-out: skip ID3 parsing entirely on file:// protocol
+  if (window.location.protocol === 'file:') {
+    return null;
+  }
+
+  let buffer;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch(url, {
+      headers: { 'Range': 'bytes=0-10239' },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) return null;
+    buffer = await response.arrayBuffer();
+  } catch (e) {
+    // Network failure, abort, or CORS error — silent fallback
+    return null;
+  }
+
+  if (buffer.byteLength < 10) return null;
+
+  const view = new DataView(buffer);
+
+  // Check "ID3" magic bytes at offset 0
+  if (view.getUint8(0) !== 0x49 || // 'I'
+      view.getUint8(1) !== 0x44 || // 'D'
+      view.getUint8(2) !== 0x33) { // '3'
+    return null;
+  }
+
+  // Read ID3v2 version
+  const majorVersion = view.getUint8(3);
+
+  // Read tag size (synchsafe integer at bytes 6-9)
+  const tagSize = (view.getUint8(6) << 21) |
+                  (view.getUint8(7) << 14) |
+                  (view.getUint8(8) << 7) |
+                  view.getUint8(9);
+
+  // Iterate frames starting at byte 10
+  let offset = 10;
+  const maxOffset = Math.min(tagSize + 10, buffer.byteLength);
+
+  while (offset + 10 < maxOffset) {
+    // Read frame ID (4 bytes)
+    const frameId = String.fromCharCode(
+      view.getUint8(offset),
+      view.getUint8(offset + 1),
+      view.getUint8(offset + 2),
+      view.getUint8(offset + 3)
+    );
+
+    // Null frame ID means we've hit padding
+    if (frameId === '\x00\x00\x00\x00') break;
+
+    // Read frame size
+    let frameSize;
+    if (majorVersion >= 4) {
+      // ID3v2.4 uses synchsafe integers for frame size
+      frameSize = (view.getUint8(offset + 4) << 21) |
+                  (view.getUint8(offset + 5) << 14) |
+                  (view.getUint8(offset + 6) << 7) |
+                  view.getUint8(offset + 7);
+    } else {
+      // ID3v2.3 uses regular integers
+      frameSize = view.getUint32(offset + 4);
+    }
+
+    if (frameSize <= 0 || offset + 10 + frameSize > maxOffset) break;
+
+    if (frameId === 'TIT2') {
+      // Found the title frame
+      const encoding = view.getUint8(offset + 10);
+      const textStart = offset + 11;
+      const textLength = frameSize - 1;
+
+      if (textLength <= 0) return null;
+
+      return decodeText(buffer, textStart, textLength, encoding);
+    }
+
+    offset += 10 + frameSize;
+  }
+
+  return null;
+}
+
+/**
+ * Decode text from an ID3v2 frame based on encoding byte.
+ * @param {ArrayBuffer} buffer
+ * @param {number} start
+ * @param {number} length
+ * @param {number} encoding - 0=ISO-8859-1, 1=UTF-16 BOM, 2=UTF-16BE, 3=UTF-8
+ * @returns {string|null}
+ */
+function decodeText(buffer, start, length, encoding) {
+  try {
+    const bytes = new Uint8Array(buffer, start, length);
+
+    switch (encoding) {
+      case 0: // ISO-8859-1
+        return Array.from(bytes)
+          .filter((b) => b !== 0)
+          .map((b) => String.fromCharCode(b))
+          .join('');
+
+      case 1: // UTF-16 with BOM
+      case 2: { // UTF-16BE
+        const decoder = new TextDecoder('utf-16le');
+        // Check BOM
+        if (bytes[0] === 0xFF && bytes[1] === 0xFE) {
+          return decoder.decode(bytes.slice(2)).replace(/\0/g, '');
+        } else if (bytes[0] === 0xFE && bytes[1] === 0xFF) {
+          const be = new TextDecoder('utf-16be');
+          return be.decode(bytes.slice(2)).replace(/\0/g, '');
+        }
+        return decoder.decode(bytes).replace(/\0/g, '');
+      }
+
+      case 3: // UTF-8
+        return new TextDecoder('utf-8').decode(bytes).replace(/\0/g, '');
+
+      default:
+        return null;
+    }
+  } catch (e) {
+    return null;
+  }
+}
+
+    // === MANIFEST PROCESSOR ===
+/**
+ * Manifest Processor
+ * Processes raw filename array into enriched TrackInfo objects.
+ * Attempts ID3v2 title extraction, falls back to filename derivation.
+ * Applies natural sort to the processed array.
+ */
+
+
+const ASSETS_PATH = 'assets/';
+
+/**
+ * @typedef {Object} TrackInfo
+ * @property {string} filename - Original filename from tracks.js
+ * @property {string} path - Relative path to audio file
+ * @property {string} title - Display title (ID3 or filename-derived)
+ * @property {'id3'|'filename'} titleSource - Source of the title
+ * @property {number} originalIndex - Index in the original TRACKS array
+ */
+
+/**
+ * Process raw filename array into enriched, sorted TrackInfo objects.
+ * @param {string[]} filenames - Raw MP3 filename strings from TRACKS global
+ * @returns {Promise<TrackInfo[]>} Sorted array of track metadata
+ */
+async function processManifest(filenames) {
+  const tracks = await Promise.all(
+    filenames.map(async (filename, index) => {
+      const path = ASSETS_PATH + filename;
+      let title = null;
+      let titleSource = 'filename';
+
+      // Attempt ID3v2 title extraction (best-effort, HTTPS-only)
+      try {
+        title = await parseID3Title(path);
+        if (title) {
+          titleSource = 'id3';
+        }
+      } catch (e) {
+        // Silent failure — fall back to filename
+      }
+
+      // Fall back to filename-derived title
+      if (!title) {
+        title = deriveTitle(filename);
+        titleSource = 'filename';
+      }
+
+      return {
+        filename,
+        path,
+        title,
+        titleSource,
+        originalIndex: index,
+      };
+    })
+  );
+
+  return naturalSort(tracks);
+}
+
+    // === PLAYER ENGINE ===
+/**
+ * Player Engine
+ * Core audio playback controller. Orchestrates playback, modes, events,
+ * and integrates with PlaybackStateMachine, ShuffleEngine, AudioPipeline,
+ * and PersistenceManager.
+ */
+
+
+class PlayerEngine {
+  /**
+   * @param {Array<{filename: string, path: string, title: string}>} tracks
+   * @param {object} [options]
+   * @param {boolean} [options.gainNormalization=true]
+   */
+  constructor(tracks, options = {}) {
+    this._tracks = tracks;
+    this._gainNormalization = options.gainNormalization !== false;
+
+    // State
+    this._currentTrackIndex = -1;
+    this._selectedTrackIndex = -1;
+    this._volume = 1.0;
+    this._muted = false;
+    this._shuffleEnabled = false;
+    this._status = 'idle'; // idle | playing | paused | buffering | error
+
+    // Sub-systems
+    this._stateMachine = new PlaybackStateMachine();
+    this._shuffleEngine = null;
+    this._audioPipeline = new AudioPipeline();
+    this._persistence = new PersistenceManager();
+
+    // Audio elements
+    this._audio = new Audio();
+    this._audio.preload = 'none';
+    this._prefetchAudio = null;
+    this._audioConnected = false;
+
+    // Normalization measurement timer
+    this._normalizationTimeout = null;
+
+    // Event listeners
+    this._listeners = {};
+    this._boundHandlers = {};
+
+    this._setupAudioEvents();
+    this._restoreState();
+  }
+
+  // === PLAYBACK CONTROLS ===
+
+  play(index) {
+    if (index < 0 || index >= this._tracks.length) return;
+
+    this._currentTrackIndex = index;
+    this._status = 'buffering';
+    this._emit('trackChange', { index, track: this._tracks[index] });
+
+    const track = this._tracks[index];
+    this._audio.src = track.path;
+    this._audio.preload = 'auto';
+    this._audio.load();
+
+    // Connect to Web Audio pipeline on first play
+    if (!this._audioConnected && this._audioPipeline.isWebAudioAvailable()) {
+      this._audioPipeline.connect(this._audio);
+      this._audioConnected = true;
+    }
+
+    // Apply cached gain or default
+    if (this._gainNormalization) {
+      const cachedGain = this._audioPipeline.getCachedGain(track.filename);
+      if (cachedGain) {
+        this._audioPipeline.setGain(cachedGain);
+      } else {
+        this._audioPipeline.setGain(1.0);
+        // Measure after 2 seconds of playback
+        this._normalizationTimeout = setTimeout(() => {
+          this._audioPipeline.measureAndCacheGain(track.filename);
+        }, 2000);
+      }
+    }
+
+    // Set volume
+    this._applyVolume();
+
+    const playPromise = this._audio.play();
+    if (playPromise) {
+      playPromise.catch((err) => {
+        if (err.name !== 'AbortError') {
+          this._handleError();
+        }
+      });
+    }
+
+    this._persistState();
+    this._schedulePrefetch();
+  }
+
+  pause() {
+    if (this._status !== 'playing' && this._status !== 'buffering') return;
+    this._audio.pause();
+    this._status = 'paused';
+    this._emit('pause');
+  }
+
+  resume() {
+    if (this._status !== 'paused') return;
+    const playPromise = this._audio.play();
+    if (playPromise) {
+      playPromise.catch(() => {});
+    }
+  }
+
+  stop() {
+    this._audio.pause();
+    this._audio.currentTime = 0;
+    this._status = 'idle';
+    this._currentTrackIndex = -1;
+    this._cancelPrefetch();
+    this._clearNormalizationTimer();
+    this._emit('stop');
+  }
+
+  skipForward() {
+    if (this._tracks.length === 0) return;
+
+    let nextIndex;
+    if (this._shuffleEnabled && this._shuffleEngine) {
+      const currentPos = this._shuffleEngine.getPositionOf(this._currentTrackIndex);
+      const nextPos = currentPos + 1;
+      if (nextPos >= this._shuffleEngine.getLength()) {
+        this._shuffleEngine.reshuffle();
+        nextIndex = this._shuffleEngine.getTrackAt(0);
+      } else {
+        nextIndex = this._shuffleEngine.getTrackAt(nextPos);
+      }
+    } else {
+      nextIndex = (this._currentTrackIndex + 1) % this._tracks.length;
+    }
+
+    this.play(nextIndex);
+  }
+
+  skipBack() {
+    if (this._tracks.length === 0) return;
+
+    // If more than 3 seconds in, restart current track
+    if (this._audio.currentTime > 3) {
+      this._audio.currentTime = 0;
+      return;
+    }
+
+    let prevIndex;
+    if (this._shuffleEnabled && this._shuffleEngine) {
+      const currentPos = this._shuffleEngine.getPositionOf(this._currentTrackIndex);
+      const prevPos = currentPos - 1;
+      if (prevPos < 0) {
+        prevIndex = this._shuffleEngine.getTrackAt(this._shuffleEngine.getLength() - 1);
+      } else {
+        prevIndex = this._shuffleEngine.getTrackAt(prevPos);
+      }
+    } else {
+      prevIndex = this._currentTrackIndex - 1;
+      if (prevIndex < 0) prevIndex = this._tracks.length - 1;
+    }
+
+    this.play(prevIndex);
+  }
+
+  seekTo(fraction) {
+    if (!this._audio.duration) return;
+    this._audio.currentTime = fraction * this._audio.duration;
+  }
+
+  // === VOLUME ===
+
+  setVolume(level) {
+    this._volume = Math.max(0, Math.min(1, level));
+    this._applyVolume();
+    this._emit('volumeChange', { volume: this._volume, muted: this._muted });
+    this._persistState();
+  }
+
+  setMute(muted) {
+    this._muted = muted;
+    this._applyVolume();
+    this._emit('volumeChange', { volume: this._volume, muted: this._muted });
+  }
+
+  // === MODE CONTROLS ===
+
+  setMode(mode) {
+    this._stateMachine.setMode(mode);
+    this._emit('modeChange', { mode });
+    this._persistState();
+  }
+
+  setShuffle(enabled) {
+    this._shuffleEnabled = enabled;
+    if (enabled && !this._shuffleEngine) {
+      this._shuffleEngine = new ShuffleEngine(this._tracks.length);
+    } else if (enabled && this._shuffleEngine) {
+      this._shuffleEngine.reshuffle();
+    }
+    this._emit('shuffleChange', { enabled });
+    this._persistState();
+  }
+
+  // === STATE QUERIES ===
+
+  getState() {
+    return {
+      status: this._status,
+      currentTrackIndex: this._currentTrackIndex,
+      selectedTrackIndex: this._selectedTrackIndex,
+      mode: this._stateMachine.getMode(),
+      shuffleEnabled: this._shuffleEnabled,
+      volume: this._volume,
+      muted: this._muted,
+    };
+  }
+
+  getCurrentTrack() {
+    if (this._currentTrackIndex < 0) return null;
+    return this._tracks[this._currentTrackIndex];
+  }
+
+  getProgress() {
+    return {
+      elapsed: this._audio.currentTime || 0,
+      duration: this._audio.duration || 0,
+      fraction: this._audio.duration ? this._audio.currentTime / this._audio.duration : 0,
+    };
+  }
+
+  setSelectedIndex(index) {
+    this._selectedTrackIndex = index;
+  }
+
+  // === EVENTS ===
+
+  on(event, handler) {
+    if (!this._listeners[event]) {
+      this._listeners[event] = [];
+    }
+    this._listeners[event].push(handler);
+  }
+
+  _emit(event, data) {
+    const handlers = this._listeners[event];
+    if (handlers) {
+      handlers.forEach((h) => h(data));
+    }
+  }
+
+  // === LIFECYCLE ===
+
+  destroy() {
+    this._audio.pause();
+    this._audio.src = '';
+    this._removeAudioEvents();
+    this._cancelPrefetch();
+    this._clearNormalizationTimer();
+    this._audioPipeline.destroy();
+    this._listeners = {};
+  }
+
+  // === PRIVATE ===
+
+  _setupAudioEvents() {
+    const handlers = {
+      loadstart: () => {
+        this._status = 'buffering';
+        this._emit('bufferingStart');
+      },
+      canplay: () => {
+        this._emit('bufferingEnd');
+      },
+      playing: () => {
+        this._status = 'playing';
+        this._emit('play');
+      },
+      waiting: () => {
+        this._emit('bufferingStart');
+      },
+      timeupdate: () => {
+        this._emit('progress', this.getProgress());
+        this._checkPrefetch();
+      },
+      ended: () => {
+        this._clearNormalizationTimer();
+        const action = this._stateMachine.onTrackEnd(
+          this._currentTrackIndex,
+          this._tracks.length,
+          this._shuffleEnabled ? this._shuffleEngine : undefined
+        );
+        if (action.action === 'play') {
+          this.play(action.index);
+        } else {
+          this._status = 'idle';
+          this._emit('ended');
+        }
+      },
+      error: () => {
+        this._handleError();
+      },
+      durationchange: () => {
+        this._emit('progress', this.getProgress());
+      },
+    };
+
+    this._boundHandlers = handlers;
+    Object.entries(handlers).forEach(([event, handler]) => {
+      this._audio.addEventListener(event, handler);
+    });
+  }
+
+  _removeAudioEvents() {
+    Object.entries(this._boundHandlers).forEach(([event, handler]) => {
+      this._audio.removeEventListener(event, handler);
+    });
+  }
+
+  _handleError() {
+    this._status = 'error';
+    this._emit('error', { index: this._currentTrackIndex });
+
+    // Skip to next track
+    const nextIndex = (this._currentTrackIndex + 1) % this._tracks.length;
+    if (nextIndex !== this._currentTrackIndex) {
+      setTimeout(() => this.play(nextIndex), 500);
+    } else {
+      // Only one track and it failed
+      this._status = 'idle';
+    }
+  }
+
+  _applyVolume() {
+    const effectiveVolume = this._muted ? 0 : this._volume;
+    if (this._audioPipeline.isWebAudioAvailable()) {
+      this._audioPipeline.setVolume(effectiveVolume);
+    } else {
+      this._audio.volume = effectiveVolume;
+    }
+  }
+
+  _schedulePrefetch() {
+    this._cancelPrefetch();
+  }
+
+  _checkPrefetch() {
+    // Prefetch next track at 75% progress
+    if (!this._prefetchAudio && this._audio.duration) {
+      const progress = this._audio.currentTime / this._audio.duration;
+      if (progress >= 0.75) {
+        this._prefetchNext();
+      }
+    }
+  }
+
+  _prefetchNext() {
+    let nextIndex;
+    if (this._shuffleEnabled && this._shuffleEngine) {
+      const pos = this._shuffleEngine.getPositionOf(this._currentTrackIndex);
+      if (pos + 1 < this._shuffleEngine.getLength()) {
+        nextIndex = this._shuffleEngine.getTrackAt(pos + 1);
+      }
+    } else {
+      nextIndex = this._currentTrackIndex + 1;
+      if (nextIndex >= this._tracks.length) nextIndex = 0;
+    }
+
+    if (nextIndex !== undefined && nextIndex !== this._currentTrackIndex) {
+      this._prefetchAudio = new Audio();
+      this._prefetchAudio.preload = 'metadata';
+      this._prefetchAudio.src = this._tracks[nextIndex].path;
+    }
+  }
+
+  _cancelPrefetch() {
+    if (this._prefetchAudio) {
+      this._prefetchAudio.src = '';
+      this._prefetchAudio = null;
+    }
+  }
+
+  _clearNormalizationTimer() {
+    if (this._normalizationTimeout) {
+      clearTimeout(this._normalizationTimeout);
+      this._normalizationTimeout = null;
+    }
+  }
+
+  _persistState() {
+    const track = this.getCurrentTrack();
+    this._persistence.save({
+      lastTrack: track ? track.filename : null,
+      volume: this._volume,
+      mode: this._stateMachine.getMode(),
+      shuffleEnabled: this._shuffleEnabled,
+    });
+  }
+
+  _restoreState() {
+    const state = this._persistence.load();
+    if (!state) return;
+
+    this._volume = state.volume;
+    this._stateMachine.setMode(state.mode);
+    this._shuffleEnabled = state.shuffleEnabled;
+
+    if (this._shuffleEnabled && this._tracks.length > 0) {
+      this._shuffleEngine = new ShuffleEngine(this._tracks.length);
+    }
+
+    // Find last track by filename
+    if (state.lastTrack) {
+      const idx = this._tracks.findIndex((t) => t.filename === state.lastTrack);
+      if (idx >= 0) {
+        this._selectedTrackIndex = idx;
+      }
+    }
+  }
+}
+
+    // === SONG LIST RENDERER ===
+/**
+ * Song List Renderer
+ * Renders TrackInfo array into DOM container with full accessibility semantics.
+ * Uses textContent for all user-derived text (XSS prevention).
+ */
+
+class SongListRenderer {
+  /**
+   * @param {HTMLElement} container - DOM element for the song list
+   * @param {HTMLElement} liveRegion - aria-live region for announcements
+   * @param {function} onTrackSelect - Callback when user selects a track (index)
+   */
+  constructor(container, liveRegion, onTrackSelect) {
+    this._container = container;
+    this._liveRegion = liveRegion;
+    this._onTrackSelect = onTrackSelect;
+    this._tracks = [];
+    this._activeIndex = -1;
+    this._selectedIndex = -1;
+
+    // Set up container accessibility
+    this._container.setAttribute('role', 'listbox');
+    this._container.setAttribute('aria-label', 'Song list');
+  }
+
+  /**
+   * Render the full song list.
+   * @param {Array<{title: string, filename: string}>} tracks
+   */
+  render(tracks) {
+    this._tracks = tracks;
+    this._container.innerHTML = '';
+
+    tracks.forEach((track, index) => {
+      const item = document.createElement('div');
+      item.setAttribute('role', 'option');
+      item.setAttribute('tabindex', index === 0 ? '0' : '-1');
+      item.setAttribute('data-index', index);
+      item.classList.add('song-item');
+
+      // Track number
+      const numSpan = document.createElement('span');
+      numSpan.classList.add('song-number');
+      numSpan.textContent = String(index + 1).padStart(2, '0');
+
+      // Track title (safe text content)
+      const titleSpan = document.createElement('span');
+      titleSpan.classList.add('song-title');
+      titleSpan.textContent = track.title;
+
+      item.appendChild(numSpan);
+      item.appendChild(titleSpan);
+
+      // Click/tap handler
+      item.addEventListener('click', () => {
+        this._onTrackSelect(index);
+      });
+
+      this._container.appendChild(item);
+    });
+  }
+
+  /**
+   * Update the active (playing) track highlight.
+   * @param {number} index - Index of currently playing track (-1 for none)
+   */
+  setActiveTrack(index) {
+    // Remove previous active
+    if (this._activeIndex >= 0) {
+      const prev = this._container.querySelector(`[data-index="${this._activeIndex}"]`);
+      if (prev) {
+        prev.classList.remove('song-item--active');
+        prev.removeAttribute('aria-current');
+      }
+    }
+
+    this._activeIndex = index;
+
+    // Set new active
+    if (index >= 0) {
+      const current = this._container.querySelector(`[data-index="${index}"]`);
+      if (current) {
+        current.classList.add('song-item--active');
+        current.setAttribute('aria-current', 'true');
+        // Scroll into view if needed
+        current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+
+      // Announce to screen readers
+      if (this._liveRegion && this._tracks[index]) {
+        this._liveRegion.textContent = `Now playing: ${this._tracks[index].title}`;
+      }
+    }
+  }
+
+  /**
+   * Update the selected (keyboard-focused) track.
+   * @param {number} index - Index of focused track (-1 for none)
+   */
+  setSelectedTrack(index) {
+    // Remove previous selection
+    if (this._selectedIndex >= 0) {
+      const prev = this._container.querySelector(`[data-index="${this._selectedIndex}"]`);
+      if (prev) {
+        prev.classList.remove('song-item--selected');
+        prev.removeAttribute('aria-selected');
+        prev.setAttribute('tabindex', '-1');
+      }
+    }
+
+    this._selectedIndex = index;
+
+    // Set new selection
+    if (index >= 0) {
+      const current = this._container.querySelector(`[data-index="${index}"]`);
+      if (current) {
+        current.classList.add('song-item--selected');
+        current.setAttribute('aria-selected', 'true');
+        current.setAttribute('tabindex', '0');
+        current.focus();
+      }
+    }
+  }
+
+  /**
+   * Get the number of rendered tracks.
+   * @returns {number}
+   */
+  getTrackCount() {
+    return this._tracks.length;
+  }
+}
+
+    // === UI CONTROLLER ===
+/**
+ * UI Controller
+ * Coordinates DOM updates: progress bar, time display, active track highlight,
+ * now-playing title, loading/buffering states, error notifications (toast).
+ */
+
+
+class UIController {
+  /**
+   * @param {object} elements - UIElements references
+   */
+  constructor(elements) {
+    this._el = elements;
+    this._toastTimeout = null;
+  }
+
+  /**
+   * Update progress bar and time displays.
+   * @param {number} elapsed - Current time in seconds
+   * @param {number} duration - Total duration in seconds
+   */
+  updateProgress(elapsed, duration) {
+    const fraction = duration > 0 ? elapsed / duration : 0;
+
+    if (this._el.progressFill) {
+      this._el.progressFill.style.width = `${fraction * 100}%`;
+    }
+    if (this._el.elapsedTime) {
+      this._el.elapsedTime.textContent = formatTime(elapsed);
+    }
+    if (this._el.totalTime) {
+      this._el.totalTime.textContent = formatTime(duration);
+    }
+  }
+
+  /**
+   * Update the now-playing title display.
+   * @param {string} title
+   */
+  setNowPlaying(title) {
+    if (this._el.nowPlayingTitle) {
+      this._el.nowPlayingTitle.textContent = title;
+    }
+  }
+
+  /**
+   * Show loading overlay.
+   */
+  showLoading() {
+    if (this._el.loadingOverlay) {
+      this._el.loadingOverlay.classList.add('visible');
+      this._el.loadingOverlay.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  /**
+   * Hide loading overlay.
+   */
+  hideLoading() {
+    if (this._el.loadingOverlay) {
+      this._el.loadingOverlay.classList.remove('visible');
+      this._el.loadingOverlay.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  /**
+   * Show buffering indicator on progress bar.
+   */
+  showBuffering() {
+    if (this._el.progressBar) {
+      this._el.progressBar.classList.add('buffering');
+    }
+  }
+
+  /**
+   * Hide buffering indicator.
+   */
+  hideBuffering() {
+    if (this._el.progressBar) {
+      this._el.progressBar.classList.remove('buffering');
+    }
+  }
+
+  /**
+   * Show a toast notification (single-slot, 3s duration).
+   * @param {string} message
+   * @param {'error'|'info'} [type='info']
+   */
+  showError(message, type = 'error') {
+    if (!this._el.toastContainer) return;
+
+    // Clear existing toast
+    if (this._toastTimeout) {
+      clearTimeout(this._toastTimeout);
+    }
+
+    this._el.toastContainer.textContent = message;
+    this._el.toastContainer.setAttribute('role', 'alert');
+    this._el.toastContainer.setAttribute(
+      'aria-live',
+      type === 'error' ? 'assertive' : 'polite'
+    );
+    this._el.toastContainer.classList.add('visible');
+
+    // Auto-dismiss after 3 seconds
+    this._toastTimeout = setTimeout(() => {
+      this._el.toastContainer.classList.remove('visible');
+    }, 3000);
+  }
+
+  /**
+   * Show empty library message.
+   */
+  showEmptyLibrary() {
+    if (this._el.songListContainer) {
+      this._el.songListContainer.innerHTML = '';
+      const msg = document.createElement('div');
+      msg.classList.add('empty-library');
+      msg.textContent = 'Empty Library — no tracks available';
+      msg.setAttribute('role', 'status');
+      this._el.songListContainer.appendChild(msg);
+    }
+  }
+
+  /**
+   * Update play/pause button state.
+   * @param {boolean} isPlaying
+   */
+  setPlayButtonState(isPlaying) {
+    if (this._el.playPauseBtn) {
+      this._el.playPauseBtn.textContent = isPlaying ? '⏸' : '▶';
+      this._el.playPauseBtn.setAttribute(
+        'aria-label',
+        isPlaying ? 'Pause' : 'Play'
+      );
+    }
+  }
+
+  /**
+   * Update loop button state.
+   * @param {string} mode - 'loop-one' | 'loop-all' | 'play-through' | 'stop'
+   */
+  setLoopButtonState(mode) {
+    if (this._el.loopBtn) {
+      const labels = {
+        'loop-one': '🔂',
+        'loop-all': '🔁',
+        'play-through': '▶️',
+        'stop': '⏹',
+      };
+      this._el.loopBtn.textContent = labels[mode] || '▶️';
+      this._el.loopBtn.setAttribute('aria-label', `Playback mode: ${mode}`);
+      this._el.loopBtn.classList.toggle('active', mode === 'loop-one' || mode === 'loop-all');
+    }
+  }
+
+  /**
+   * Update shuffle button state.
+   * @param {boolean} enabled
+   */
+  setShuffleButtonState(enabled) {
+    if (this._el.shuffleBtn) {
+      this._el.shuffleBtn.classList.toggle('active', enabled);
+      this._el.shuffleBtn.setAttribute(
+        'aria-label',
+        enabled ? 'Shuffle: on' : 'Shuffle: off'
+      );
+    }
+  }
+
+  /**
+   * Remove all event listeners, nullify DOM references.
+   */
+  destroy() {
+    if (this._toastTimeout) {
+      clearTimeout(this._toastTimeout);
+    }
+    this._el = {};
+  }
+}
+
+    // === ANIMATION CONTROLLER ===
+/**
+ * Animation Controller
+ * Manages CSS animation states (vinyl spin, bubble tubes).
+ * Respects prefers-reduced-motion and Page Visibility API.
+ */
+
+class AnimationController {
+  constructor() {
+    this._vinylElement = null;
+    this._bubbleElements = [];
+    this._reducedMotion = false;
+    this._paused = false;
+    this._vinylSpinning = false;
+
+    // Detect reduced motion preference
+    this._motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    this._reducedMotion = this._motionQuery.matches;
+
+    // Listen for runtime changes
+    this._motionHandler = (e) => {
+      this._reducedMotion = e.matches;
+      this._applyState();
+    };
+    this._motionQuery.addEventListener('change', this._motionHandler);
+  }
+
+  /**
+   * Set DOM element references for animations.
+   * @param {HTMLElement} vinyl - The vinyl record element
+   * @param {HTMLElement[]} bubbles - Bubble tube container elements
+   */
+  setElements(vinyl, bubbles) {
+    this._vinylElement = vinyl;
+    this._bubbleElements = bubbles || [];
+    this._applyState();
+  }
+
+  /**
+   * Pause all animations (tab hidden).
+   */
+  pause() {
+    this._paused = true;
+    this._applyState();
+  }
+
+  /**
+   * Resume animations (tab visible and motion allowed).
+   */
+  resume() {
+    this._paused = false;
+    this._applyState();
+  }
+
+  /**
+   * Set vinyl spin state based on playback.
+   * @param {boolean} spinning
+   */
+  setVinylSpinning(spinning) {
+    this._vinylSpinning = spinning;
+    this._applyState();
+  }
+
+  /**
+   * Check if reduced motion is preferred.
+   * @returns {boolean}
+   */
+  isReducedMotion() {
+    return this._reducedMotion;
+  }
+
+  /**
+   * Remove event listeners, clear references.
+   */
+  destroy() {
+    this._motionQuery.removeEventListener('change', this._motionHandler);
+    this._vinylElement = null;
+    this._bubbleElements = [];
+  }
+
+  /**
+   * Apply the current animation state to DOM elements.
+   * @private
+   */
+  _applyState() {
+    const shouldAnimate = !this._reducedMotion && !this._paused;
+
+    // Vinyl spin
+    if (this._vinylElement) {
+      if (shouldAnimate && this._vinylSpinning) {
+        this._vinylElement.style.animationPlayState = 'running';
+      } else {
+        this._vinylElement.style.animationPlayState = 'paused';
+      }
+    }
+
+    // Bubble tubes
+    this._bubbleElements.forEach((el) => {
+      if (shouldAnimate) {
+        el.style.animationPlayState = 'running';
+      } else {
+        el.style.animationPlayState = 'paused';
+      }
+    });
+  }
+}
+
+    // === VISIBILITY CONTROLLER ===
+/**
+ * Visibility Controller
+ * Observes Page Visibility API and dispatches pause/resume signals.
+ *
+ * Design note: When tab is backgrounded, audio CONTINUES but animations PAUSE.
+ * This asymmetry is intentional — audio is the primary function, animations are
+ * decorative and consume GPU/battery.
+ */
+
+class VisibilityController {
+  /**
+   * @param {object} callbacks
+   * @param {function} callbacks.onHidden - Called when tab becomes hidden
+   * @param {function} callbacks.onVisible - Called when tab becomes visible
+   */
+  constructor(callbacks) {
+    this._callbacks = callbacks;
+    this._handler = () => {
+      if (document.visibilityState === 'hidden') {
+        this._callbacks.onHidden();
+      } else {
+        this._callbacks.onVisible();
+      }
+    };
+    document.addEventListener('visibilitychange', this._handler);
+  }
+
+  /**
+   * Remove visibilitychange event listener.
+   */
+  destroy() {
+    document.removeEventListener('visibilitychange', this._handler);
+  }
+}
+
+    // === KEYBOARD NAVIGATION ===
+/**
+ * Keyboard Navigation
+ * Implements full keyboard support for the jukebox interface.
+ *
+ * Focus order: Play/Pause → Skip Back → Skip Forward → Volume → Mute → Loop → Shuffle → Song List
+ * Song list: Arrow Up/Down moves focus, Enter/Space plays, Home/End jumps
+ * Escape: return focus to play button
+ */
+
+function setupKeyboardNavigation(ui, playerEngine, songListRenderer, tracks) {
+  const songList = ui.songListContainer;
+  let focusedSongIndex = 0;
+
+  // Song list keyboard handler
+  songList.addEventListener('keydown', (e) => {
+    const items = songList.querySelectorAll('[role="option"]');
+    if (items.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        focusedSongIndex = Math.min(focusedSongIndex + 1, items.length - 1);
+        songListRenderer.setSelectedTrack(focusedSongIndex);
+        playerEngine.setSelectedIndex(focusedSongIndex);
+        break;
+
+      case 'ArrowUp':
+        e.preventDefault();
+        focusedSongIndex = Math.max(focusedSongIndex - 1, 0);
+        songListRenderer.setSelectedTrack(focusedSongIndex);
+        playerEngine.setSelectedIndex(focusedSongIndex);
+        break;
+
+      case 'Home':
+        e.preventDefault();
+        focusedSongIndex = 0;
+        songListRenderer.setSelectedTrack(focusedSongIndex);
+        playerEngine.setSelectedIndex(focusedSongIndex);
+        break;
+
+      case 'End':
+        e.preventDefault();
+        focusedSongIndex = items.length - 1;
+        songListRenderer.setSelectedTrack(focusedSongIndex);
+        playerEngine.setSelectedIndex(focusedSongIndex);
+        break;
+
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        playerEngine.play(focusedSongIndex);
+        break;
+    }
+  });
+
+  // Volume slider keyboard (5% increments handled natively by range input)
+  // Just ensure aria-valuenow stays in sync
+  if (ui.volumeSlider) {
+    ui.volumeSlider.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        // Let native range handle it, then sync
+        setTimeout(() => {
+          playerEngine.setVolume(parseInt(ui.volumeSlider.value) / 100);
+        }, 0);
+      }
+    });
+  }
+
+  // Global Escape handler
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (ui.playPauseBtn) {
+        ui.playPauseBtn.focus();
+      }
+    }
+  });
+}
+
+    // === TOUCH HANDLER ===
+/**
+ * Touch Handler
+ * Implements touch interaction refinements for mobile UX.
+ *
+ * - Drag threshold: 10px before recognizing as scroll
+ * - Tap detection: fire only if movement < 10px from touchstart
+ * - Progress bar scrub uses requestAnimationFrame during active scrub
+ * - Passive listeners except on progress bar
+ */
+
+// Touch handling is integrated into the app-initializer's event setup.
+// This module provides utility functions for touch gesture detection.
+
+const DRAG_THRESHOLD = 10;
+
+/**
+ * Creates a tap detector that distinguishes taps from scrolls.
+ * @param {HTMLElement} element
+ * @param {function} onTap - Called with the event when a tap is detected
+ */
+function setupTapDetection(element, onTap) {
+  let startX = 0;
+  let startY = 0;
+  let moved = false;
+
+  element.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    moved = false;
+  }, { passive: true });
+
+  element.addEventListener('touchmove', (e) => {
+    const dx = Math.abs(e.touches[0].clientX - startX);
+    const dy = Math.abs(e.touches[0].clientY - startY);
+    if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
+      moved = true;
+    }
+  }, { passive: true });
+
+  element.addEventListener('touchend', (e) => {
+    if (!moved) {
+      onTap(e);
+    }
+  }, { passive: true });
+}
+
+    // === APP INITIALIZER ===
+/**
+ * App Initializer
+ * Entry point. Orchestrates startup sequence.
+ */
+
+// When used in build (concatenated), these are all in the same IIFE scope.
+// During development with ES modules, they would be imported.
+
+async function initApp() {
+  const ui = getUIElements();
+
+  // Show loading state
+  if (ui.loadingOverlay) {
+    ui.loadingOverlay.classList.add('visible');
+    ui.loadingOverlay.setAttribute('aria-hidden', 'false');
+  }
+
+  // Check for TRACKS global
+  if (typeof window.TRACKS === 'undefined' || !Array.isArray(window.TRACKS)) {
+    showFatalError(ui, 'Music library could not be loaded');
+    return;
+  }
+
+  if (window.TRACKS.length === 0) {
+    hidLoading(ui);
+    showEmptyLibrary(ui);
+    return;
+  }
+
+  // Parse URL query parameters
+  const params = parseQueryParams();
+
+  // Process manifest (ID3 + title derivation + sort)
+  let tracks;
+  try {
+    tracks = await processManifest(window.TRACKS);
+  } catch (e) {
+    showFatalError(ui, 'Failed to process music library');
+    return;
+  }
+
+  // Apply game prefix filter
+  if (params.game) {
+    tracks = filterByGamePrefix(tracks, params.game);
+  }
+
+  // Store references
+  const state = {
+    masterPlaylist: tracks,
+    filteredPlaylist: tracks,
+  };
+
+  // Create controllers
+  const songListRenderer = new SongListRenderer(
+    ui.songListContainer,
+    ui.srAnnouncements,
+    (index) => playerEngine.play(index)
+  );
+
+  const playerEngine = new PlayerEngine(tracks, { gainNormalization: true });
+  const animController = new AnimationController();
+  const uiController = new UIController(ui);
+
+  // Set up animation elements
+  const bubbleElements = [];
+  document.querySelectorAll('.bubble').forEach((el) => bubbleElements.push(el));
+  animController.setElements(ui.vinylRecord, bubbleElements);
+
+  // Visibility controller
+  const visController = new VisibilityController({
+    onHidden: () => {
+      animController.pause();
+    },
+    onVisible: () => {
+      animController.resume();
+      // Resync progress bar
+      const progress = playerEngine.getProgress();
+      uiController.updateProgress(progress.elapsed, progress.duration);
+    },
+  });
+
+  // Render song list
+  songListRenderer.render(tracks);
+
+  // Generate bubble elements
+  generateBubbles();
+
+  // Restore persisted state
+  const playerState = playerEngine.getState();
+  uiController.setLoopButtonState(playerState.mode);
+  uiController.setShuffleButtonState(playerState.shuffleEnabled);
+  if (ui.volumeSlider) {
+    ui.volumeSlider.value = String(playerState.volume * 100);
+  }
+
+  // If ?track= param, auto-select
+  if (params.track) {
+    const trackIdx = tracks.findIndex((t) => t.filename === params.track);
+    if (trackIdx >= 0) {
+      songListRenderer.setSelectedTrack(trackIdx);
+      playerEngine.setSelectedIndex(trackIdx);
+    }
+  } else if (playerState.selectedTrackIndex >= 0) {
+    songListRenderer.setSelectedTrack(playerState.selectedTrackIndex);
+  }
+
+  // Wire up Player Engine events
+  playerEngine.on('play', () => {
+    animController.setVinylSpinning(true);
+    uiController.setPlayButtonState(true);
+  });
+
+  playerEngine.on('pause', () => {
+    animController.setVinylSpinning(false);
+    uiController.setPlayButtonState(false);
+  });
+
+  playerEngine.on('stop', () => {
+    animController.setVinylSpinning(false);
+    uiController.setPlayButtonState(false);
+    uiController.updateProgress(0, 0);
+    uiController.setNowPlaying('Select a track...');
+  });
+
+  playerEngine.on('trackChange', (data) => {
+    songListRenderer.setActiveTrack(data.index);
+    uiController.setNowPlaying(data.track.title);
+  });
+
+  playerEngine.on('progress', (data) => {
+    uiController.updateProgress(data.elapsed, data.duration);
+  });
+
+  playerEngine.on('bufferingStart', () => {
+    uiController.showBuffering();
+  });
+
+  playerEngine.on('bufferingEnd', () => {
+    uiController.hideBuffering();
+  });
+
+  playerEngine.on('error', () => {
+    uiController.showError('Track unavailable, skipping...');
+  });
+
+  playerEngine.on('modeChange', (data) => {
+    uiController.setLoopButtonState(data.mode);
+  });
+
+  playerEngine.on('shuffleChange', (data) => {
+    uiController.setShuffleButtonState(data.enabled);
+  });
+
+  // Wire up transport controls
+  ui.playPauseBtn.addEventListener('click', () => {
+    const s = playerEngine.getState();
+    if (s.status === 'playing') {
+      playerEngine.pause();
+    } else if (s.status === 'paused') {
+      playerEngine.resume();
+    } else {
+      // Start from selected or first track
+      const idx = s.selectedTrackIndex >= 0 ? s.selectedTrackIndex : 0;
+      playerEngine.play(idx);
+    }
+  });
+
+  ui.skipForwardBtn.addEventListener('click', () => playerEngine.skipForward());
+  ui.skipBackBtn.addEventListener('click', () => playerEngine.skipBack());
+
+  // Loop button cycles: play-through → loop-all → loop-one → play-through
+  const modes = ['play-through', 'loop-all', 'loop-one'];
+  ui.loopBtn.addEventListener('click', () => {
+    const current = playerEngine.getState().mode;
+    const idx = modes.indexOf(current);
+    const next = modes[(idx + 1) % modes.length];
+    playerEngine.setMode(next);
+  });
+
+  // Shuffle toggle
+  ui.shuffleBtn.addEventListener('click', () => {
+    const s = playerEngine.getState();
+    playerEngine.setShuffle(!s.shuffleEnabled);
+  });
+
+  // Volume slider
+  ui.volumeSlider.addEventListener('input', (e) => {
+    playerEngine.setVolume(parseInt(e.target.value) / 100);
+  });
+
+  // Mute button
+  ui.muteBtn.addEventListener('click', () => {
+    const s = playerEngine.getState();
+    playerEngine.setMute(!s.muted);
+    ui.muteBtn.textContent = s.muted ? '🔊' : '🔇';
+    ui.muteBtn.classList.toggle('muted', !s.muted);
+  });
+
+  // Progress bar scrub
+  let isScrubbing = false;
+  const progressBar = ui.progressBar;
+
+  function handleScrub(e) {
+    const rect = progressBar.getBoundingClientRect();
+    const x = (e.clientX || e.touches[0].clientX) - rect.left;
+    const fraction = Math.max(0, Math.min(1, x / rect.width));
+    playerEngine.seekTo(fraction);
+  }
+
+  progressBar.addEventListener('pointerdown', (e) => {
+    isScrubbing = true;
+    handleScrub(e);
+    progressBar.setPointerCapture(e.pointerId);
+  });
+
+  progressBar.addEventListener('pointermove', (e) => {
+    if (isScrubbing) handleScrub(e);
+  });
+
+  progressBar.addEventListener('pointerup', () => {
+    isScrubbing = false;
+  });
+
+  // Set up keyboard navigation
+  setupKeyboardNavigation(ui, playerEngine, songListRenderer, tracks);
+
+  // Hide loading
+  hidLoading(ui);
+}
+
+function getUIElements() {
+  return {
+    songListContainer: document.getElementById('song-list'),
+    progressBar: document.getElementById('progress-bar'),
+    progressFill: document.getElementById('progress-fill'),
+    elapsedTime: document.getElementById('elapsed-time'),
+    totalTime: document.getElementById('total-time'),
+    nowPlayingTitle: document.getElementById('now-playing'),
+    vinylRecord: document.getElementById('vinyl'),
+    playPauseBtn: document.getElementById('btn-play'),
+    skipForwardBtn: document.getElementById('btn-next'),
+    skipBackBtn: document.getElementById('btn-prev'),
+    volumeSlider: document.getElementById('volume-slider'),
+    muteBtn: document.getElementById('btn-mute'),
+    loopBtn: document.getElementById('btn-loop'),
+    shuffleBtn: document.getElementById('btn-shuffle'),
+    loadingOverlay: document.getElementById('loading-overlay'),
+    toastContainer: document.getElementById('toast'),
+    srAnnouncements: document.getElementById('sr-announcements'),
+  };
+}
+
+function showFatalError(ui, message) {
+  hidLoading(ui);
+  if (ui.songListContainer) {
+    ui.songListContainer.innerHTML = '';
+    const msg = document.createElement('div');
+    msg.classList.add('empty-library');
+    msg.textContent = message;
+    msg.setAttribute('role', 'alert');
+    ui.songListContainer.appendChild(msg);
+  }
+}
+
+function showEmptyLibrary(ui) {
+  if (ui.songListContainer) {
+    ui.songListContainer.innerHTML = '';
+    const msg = document.createElement('div');
+    msg.classList.add('empty-library');
+    msg.textContent = 'Empty Library — no tracks available';
+    msg.setAttribute('role', 'status');
+    ui.songListContainer.appendChild(msg);
+  }
+}
+
+function hidLoading(ui) {
+  if (ui.loadingOverlay) {
+    ui.loadingOverlay.classList.remove('visible');
+    ui.loadingOverlay.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function generateBubbles() {
+  const colors = ['#ff8c00', '#ffaa00', '#ff1493', '#00bfff', '#39ff14', '#9b59b6'];
+  const tubes = [document.getElementById('bubble-left'), document.getElementById('bubble-right')];
+
+  tubes.forEach((tube) => {
+    if (!tube) return;
+    for (let i = 0; i < 8; i++) {
+      const bubble = document.createElement('div');
+      bubble.classList.add('bubble');
+      const size = 4 + Math.random() * 8;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const duration = 6 + Math.random() * 8;
+      const delay = Math.random() * duration;
+      const left = Math.random() * 20;
+
+      bubble.style.width = `${size}px`;
+      bubble.style.height = `${size}px`;
+      bubble.style.left = `${left}px`;
+      bubble.style.background = color;
+      bubble.style.boxShadow = `0 0 ${size}px ${color}44`;
+      bubble.style.animationDuration = `${duration}s`;
+      bubble.style.animationDelay = `-${delay}s`;
+
+      tube.appendChild(bubble);
+    }
+  });
+}
+
+// Boot on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', initApp);
+
+    })();
+    </script>
+</body>
+</html>

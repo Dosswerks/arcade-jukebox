@@ -1,0 +1,17 @@
+{
+  "name": "dosswerks-arcade-jukebox",
+  "version": "1.0.0",
+  "description": "Dosswerks Arcade Jukebox - A standalone HTML5 music player styled as a classic arcade jukebox",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "build": "bash build.sh"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.1",
+    "fast-check": "^4.1.1",
+    "jsdom": "^26.0.0"
+  }
+}
