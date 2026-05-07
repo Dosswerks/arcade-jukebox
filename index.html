@@ -2348,8 +2348,14 @@ async function initApp() {
     ui.loadingOverlay.setAttribute('aria-hidden', 'false');
   }
 
+  // Fallback: if tracks.js failed to load (e.g., file:// CORS block),
+  // default to empty array so the app shows "Empty Library" gracefully
+  if (typeof window.TRACKS === 'undefined') {
+    window.TRACKS = [];
+  }
+
   // Check for TRACKS global
-  if (typeof window.TRACKS === 'undefined' || !Array.isArray(window.TRACKS)) {
+  if (!Array.isArray(window.TRACKS)) {
     showFatalError(ui, 'Music library could not be loaded');
     return;
   }
