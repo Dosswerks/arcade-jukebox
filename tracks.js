@@ -13,7 +13,7 @@
  *
  * To auto-generate this file, run: node scripts/generate-tracks.js
  */
-const TRACKS = [
+window.TRACKS = [
   // Add your MP3 filenames here, e.g.:
   // 'dagon-theme.mp3',
   // 'brain-raid-theme.mp3',
