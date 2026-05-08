@@ -26,8 +26,8 @@ try {
  *
  * To regenerate: node scripts/generate-tracks.js
  */
-const TRACKS = [
-${files.map((f) => `  '${f}',`).join('\n')}
+window.TRACKS = [
+${files.map((f) => `  '${f.replace(/'/g, "\\'")}',`).join('\n')}
 ];
 `;
 
