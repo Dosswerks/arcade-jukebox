@@ -887,7 +887,7 @@ function deriveTitle(filename) {
     .replace(/\.mp3$/i, '')       // Remove extension
     .replace(/[-_]/g, ' ')        // Replace hyphens/underscores with spaces
     .toLowerCase()                // Normalize to lowercase first
-    .replace(/\b\w/g, (c) => c.toUpperCase()); // Capitalize first letter of each word
+    .replace(/(^|\s)\w/g, (c) => c.toUpperCase()); // Capitalize first letter of each word (space/start boundary only)
 }
 
     // === NATURAL SORT ===
