@@ -238,6 +238,14 @@ export class PlayerEngine {
     };
   }
 
+  /**
+   * Get the audio pipeline instance (for VU visualizer access).
+   * @returns {AudioPipeline}
+   */
+  getAudioPipeline() {
+    return this._audioPipeline;
+  }
+
   setSelectedIndex(index) {
     this._selectedTrackIndex = index;
   }

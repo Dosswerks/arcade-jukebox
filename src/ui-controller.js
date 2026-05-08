@@ -129,7 +129,6 @@ export class UIController {
    */
   setPlayButtonState(isPlaying) {
     if (this._el.playPauseBtn) {
-      this._el.playPauseBtn.textContent = isPlaying ? '⏸' : '▶';
       this._el.playPauseBtn.setAttribute(
         'aria-label',
         isPlaying ? 'Pause' : 'Play'
@@ -143,15 +142,32 @@ export class UIController {
    */
   setLoopButtonState(mode) {
     if (this._el.loopBtn) {
-      const labels = {
-        'loop-one': '🔂',
-        'loop-all': '🔁',
-        'play-through': '▶️',
-        'stop': '⏹',
-      };
-      this._el.loopBtn.textContent = labels[mode] || '▶️';
       this._el.loopBtn.setAttribute('aria-label', `Playback mode: ${mode}`);
       this._el.loopBtn.classList.toggle('active', mode === 'loop-one' || mode === 'loop-all');
+
+      // Update the loop icon SVG to indicate mode
+      const svg = this._el.loopBtn.querySelector('.icon-loop');
+      if (svg && mode === 'loop-one') {
+        // Add a "1" indicator for loop-one
+        let oneText = svg.querySelector('.loop-one-indicator');
+        if (!oneText) {
+          oneText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          oneText.classList.add('loop-one-indicator');
+          oneText.setAttribute('x', '12');
+          oneText.setAttribute('y', '15');
+          oneText.setAttribute('text-anchor', 'middle');
+          oneText.setAttribute('font-size', '8');
+          oneText.setAttribute('font-weight', 'bold');
+          oneText.setAttribute('fill', 'currentColor');
+          oneText.setAttribute('stroke', 'none');
+          oneText.textContent = '1';
+          svg.appendChild(oneText);
+        }
+        oneText.style.display = '';
+      } else if (svg) {
+        const oneText = svg.querySelector('.loop-one-indicator');
+        if (oneText) oneText.style.display = 'none';
+      }
     }
   }
 

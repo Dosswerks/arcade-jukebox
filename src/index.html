@@ -1,19 +1,42 @@
 <body>
 <div id="jukebox">
-    <!-- Bubble Tubes -->
+    <!-- Apex Badge — sits ON TOP of the tubes at the arch apex -->
+    <div id="arch-badge" aria-hidden="true"><span class="badge-d">D</span></div>
+
+    <!-- Bubble Tubes — form the jukebox frame -->
+    <div class="bubble-tube-arch" id="bubble-arch" aria-hidden="true"></div>
     <div class="bubble-tube bubble-tube--left" id="bubble-left" aria-hidden="true"></div>
     <div class="bubble-tube bubble-tube--right" id="bubble-right" aria-hidden="true"></div>
+    <div id="arch-inner-border" aria-hidden="true"></div>
 
-    <!-- Arch Section (Top) -->
+    <!-- Bubble container — clips bubbles to tube regions only -->
+    <div class="bubble-container" id="bubble-container" aria-hidden="true"></div>
+
+    <!-- Arch Section (interior: record player + visualizer) -->
     <div id="arch">
-        <div id="arch-title">Dosswerks Arcade Jukebox</div>
+        <!-- VU Visualizer (behind vinyl, fills arch interior) -->
+        <canvas id="vu-canvas" aria-hidden="true"></canvas>
+
+        <!-- Vinyl + Stylus -->
         <div id="vinyl-container">
             <div id="vinyl" aria-hidden="true">
-                <div id="vinyl-label"></div>
+                <div id="vinyl-label">
+                    <div class="label-upper"></div>
+                    <div class="label-lower"></div>
+                    <div class="label-ring"></div>
+                    <div class="label-dot"></div>
+                </div>
+            </div>
+            <div id="stylus-arm" aria-hidden="true">
+                <div class="stylus-base"></div>
+                <div class="stylus-arm-bar"></div>
+                <div class="stylus-head"></div>
             </div>
         </div>
-        <div id="now-playing" aria-live="polite">Select a track...</div>
     </div>
+
+    <!-- Separator line between record area and song list -->
+    <div id="arch-separator" aria-hidden="true"></div>
 
     <!-- Song List -->
     <div id="song-list"></div>
@@ -33,24 +56,41 @@
 
         <!-- Transport -->
         <div id="transport">
-            <button class="transport-btn" id="btn-prev" aria-label="Previous track">⏮</button>
-            <button class="transport-btn transport-btn--play" id="btn-play" aria-label="Play">▶</button>
-            <button class="transport-btn" id="btn-next" aria-label="Next track">⏭</button>
+            <button class="transport-btn" id="btn-prev" aria-label="Previous track">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="3" height="14"/><polygon points="21,5 9,12 21,19"/></svg>
+            </button>
+            <button class="transport-btn transport-btn--play" id="btn-play" aria-label="Play">
+                <svg class="icon-play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>
+                <svg class="icon-pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>
+            </button>
+            <button class="transport-btn" id="btn-next" aria-label="Next track">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="3,5 15,12 3,19"/><rect x="18" y="5" width="3" height="14"/></svg>
+            </button>
         </div>
 
         <!-- Mode Controls -->
         <div id="mode-controls">
-            <button class="mode-btn" id="btn-loop" aria-label="Playback mode: play-through">▶️</button>
-            <button class="mode-btn" id="btn-shuffle" aria-label="Shuffle: off">🔀</button>
+            <button class="mode-btn" id="btn-loop" aria-label="Playback mode: play-through">
+                <svg class="icon-loop" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17,1 21,5 17,9"/><path d="M3,11V9a4,4,0,0,1,4-4H21"/><polyline points="7,23 3,19 7,15"/><path d="M21,13v2a4,4,0,0,1-4,4H3"/></svg>
+            </button>
+            <button class="mode-btn" id="btn-shuffle" aria-label="Shuffle: off">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16,3 21,3 21,8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21,16 21,21 16,21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+            </button>
         </div>
 
         <!-- Volume -->
         <div id="volume-container">
-            <button class="mute-btn" id="btn-mute" aria-label="Mute">🔊</button>
+            <button class="mute-btn" id="btn-mute" aria-label="Mute">
+                <svg class="icon-vol" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="3,9 7,9 12,4 12,20 7,15 3,15"/><path d="M16,9 C17.5,10.5 17.5,13.5 16,15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19,6 C22,9 22,15 19,18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <svg class="icon-muted" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:none"><polygon points="3,9 7,9 12,4 12,20 7,15 3,15"/><line x1="16" y1="9" x2="22" y2="15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="22" y1="9" x2="16" y2="15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </button>
             <input type="range" id="volume-slider" min="0" max="100" value="100"
                    aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
         </div>
     </div>
+
+    <!-- Jukebox Footer -->
+    <div id="jukebox-footer" aria-hidden="true"></div>
 
     <!-- Loading Overlay -->
     <div id="loading-overlay" aria-hidden="true">
