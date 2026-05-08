@@ -7,30 +7,31 @@
     <style>
 /* === DOSSWERKS ARCADE JUKEBOX - STYLES === */
 
+/* --- Font Face --- */
+@font-face {
+  font-family: 'NeoNeon';
+  src: url('fonts/NeoNeon-Light.woff2') format('woff2');
+  font-display: swap;
+}
+
 /* --- CSS Custom Properties --- */
 :root {
-  /* Neon Theme Colors */
   --neon-orange: #ff8c00;
   --neon-gold: #ffaa00;
   --neon-pink: #ff1493;
   --neon-blue: #00bfff;
   --neon-green: #39ff14;
   --neon-purple: #9b59b6;
-
-  /* Glow variants */
   --glow-orange: 0 0 10px #ff8c00, 0 0 20px #ff8c0066;
   --glow-gold: 0 0 8px #ffaa00, 0 0 16px #ffaa0044;
-
-  /* Background */
   --bg-dark: #0a0a0a;
   --bg-cabinet: #1a0800;
   --bg-panel: #111111;
-
-  /* Text */
   --text-primary: #f0e6d3;
   --text-secondary: #aa9977;
-
-  /* Z-Index Layers */
+  --tube-width: 20px;
+  --jukebox-width: 320px;
+  --arch-height: 160px;
   --z-base: 0;
   --z-content: 1;
   --z-bubbles: 2;
@@ -44,7 +45,7 @@
 html, body {
   width: 100%; height: 100%; overflow: hidden;
   background: var(--bg-dark);
-  font-family: 'Courier New', monospace;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   -webkit-tap-highlight-color: transparent;
   color: var(--text-primary);
 }
@@ -52,64 +53,204 @@ html, body {
 /* --- Main Container --- */
 #jukebox {
   width: 100%; height: 100%;
-  max-width: 480px; margin: 0 auto;
+  max-width: var(--jukebox-width);
+  margin: 0 auto;
   display: flex; flex-direction: column;
   position: relative; overflow: hidden;
-  background: linear-gradient(180deg, var(--bg-cabinet) 0%, var(--bg-dark) 15%, var(--bg-dark) 85%, var(--bg-cabinet) 100%);
-  border-left: 5px solid #2a1500;
-  border-right: 5px solid #2a1500;
+  background: var(--bg-dark);
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 /* --- Bubble Tubes --- */
 .bubble-tube {
-  position: absolute; top: 0; bottom: 0; width: 30px;
+  position: absolute;
+  width: var(--tube-width);
   pointer-events: none; z-index: var(--z-bubbles);
-  overflow: hidden;
-  background: rgba(255,140,0,0.02);
-  border: 1px solid rgba(255,140,0,0.12);
+  overflow: visible;
+  background: rgba(10,10,10,0.95);
+  border-left: 1px solid rgba(255,140,0,0.35);
+  border-right: 1px solid rgba(255,140,0,0.35);
+  border-bottom: 1px solid rgba(255,140,0,0.35);
+  border-top: none;
+  box-shadow: inset 0 0 6px rgba(255,140,0,0.05);
 }
-.bubble-tube--left { left: 0; }
-.bubble-tube--right { right: 0; }
 
+.bubble-tube--left {
+  left: 0;
+  top: calc(var(--arch-height) - 1px);
+  bottom: 0;
+}
+
+.bubble-tube--right {
+  right: 0;
+  top: calc(var(--arch-height) - 1px);
+  bottom: 0;
+}
+
+.bubble-tube-arch {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  width: var(--jukebox-width);
+  height: var(--arch-height);
+  pointer-events: none; z-index: var(--z-bubbles);
+  overflow: visible;
+  background: rgba(10,10,10,0.95);
+  box-shadow: inset 0 0 6px rgba(255,140,0,0.05);
+  border: none;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 160'%3E%3Cpath d='M0,160 L0,160 A160,160 0 0,1 320,160 L320,160 L300,160 A140,140 0 0,0 20,160 Z' fill='white'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 160'%3E%3Cpath d='M0,160 L0,160 A160,160 0 0,1 320,160 L320,160 L300,160 A140,140 0 0,0 20,160 Z' fill='white'/%3E%3C/svg%3E");
+  mask-size: 100% 100%;
+}
+
+/* Outer border */
+.bubble-tube-arch::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: var(--arch-height);
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  border: 1px solid rgba(255,140,0,0.35);
+  border-bottom: none;
+  pointer-events: none;
+}
+
+/* Inner border */
+.bubble-tube-arch::after {
+  content: '';
+  position: absolute;
+  top: var(--tube-width); left: var(--tube-width); right: var(--tube-width);
+  height: calc(var(--arch-height) - var(--tube-width));
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  border: 1px solid rgba(255,140,0,0.35);
+  border-bottom: none;
+  pointer-events: none;
+}
+
+/* --- Bubbles --- */
 .bubble {
-  position: absolute; bottom: -20px; border-radius: 50%;
+  position: absolute; border-radius: 50%;
   will-change: transform, opacity;
-  animation: bubble-rise linear infinite;
 }
 
-@keyframes bubble-rise {
-  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.7; }
-  25% { transform: translateY(-25vh) translateX(6px) scale(1.1); opacity: 0.85; }
-  50% { transform: translateY(-50vh) translateX(-4px) scale(0.95); opacity: 0.7; }
-  75% { transform: translateY(-75vh) translateX(5px) scale(1.05); opacity: 0.5; }
-  100% { transform: translateY(-105vh) translateX(-2px) scale(0.7); opacity: 0; }
+/* Full-path bubbles: travel from bottom of side tube, up, through arch, to badge.
+   Bubbles are children of #jukebox. We clip them to only show within the tube regions
+   using a clip-path on a container. */
+.bubble-container {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: var(--z-bubbles);
+  /* Clip to tube shape: left strip + arch + right strip */
+  clip-path: path('M 0,1200 L 0,160 A 160,160 0 0,1 320,160 L 320,1200 L 300,1200 L 300,160 A 140,140 0 0,0 20,160 L 20,1200 Z');
 }
 
-/* --- Arch Section (Top) --- */
+.bubble-path-left {
+  offset-path: path('M 10,1200 L 10,160 A 150,150 0 0,1 160,10');
+  offset-rotate: 0deg;
+  animation: bubble-full-travel linear infinite;
+}
+
+.bubble-path-right {
+  offset-path: path('M 310,1200 L 310,160 A 150,150 0 0,0 160,10');
+  offset-rotate: 0deg;
+  animation: bubble-full-travel linear infinite;
+}
+
+@keyframes bubble-full-travel {
+  0% { offset-distance: 0%; opacity: 0.8; transform: translateX(0); }
+  10% { offset-distance: 10%; opacity: 0.8; transform: translateX(3px); }
+  20% { offset-distance: 20%; opacity: 0.8; transform: translateX(-2px); }
+  30% { offset-distance: 30%; opacity: 0.8; transform: translateX(3px); }
+  40% { offset-distance: 40%; opacity: 0.8; transform: translateX(-2px); }
+  50% { offset-distance: 50%; opacity: 0.8; transform: translateX(2px); }
+  60% { offset-distance: 60%; opacity: 0.8; transform: translateX(-3px); }
+  70% { offset-distance: 70%; opacity: 0.8; transform: translateX(2px); }
+  80% { offset-distance: 80%; opacity: 0.8; transform: translateX(-2px); }
+  90% { offset-distance: 90%; opacity: 0.8; transform: translateX(1px); }
+  100% { offset-distance: 100%; opacity: 0.8; transform: translateX(0); }
+}
+
+/* --- Arch Section --- */
 #arch {
   flex: 0 0 auto;
-  min-height: 200px;
-  padding: 16px 40px 12px;
+  height: calc(var(--arch-height) - var(--tube-width));
+  margin-top: var(--tube-width);
+  margin-left: 0;
+  margin-right: 0;
+  padding: 16px var(--tube-width) 8px;
   display: flex; flex-direction: column; align-items: center;
   justify-content: center;
-  position: relative; z-index: var(--z-content);
-  background: radial-gradient(ellipse at 50% 20%, rgba(255,140,0,0.06) 0%, transparent 70%);
-  border-bottom: 2px solid rgba(255,140,0,0.3);
-  border-radius: 0 0 50% 50% / 0 0 8% 8%;
+  position: relative; z-index: var(--z-base);
+  background: radial-gradient(ellipse at 50% 70%, rgba(255,140,0,0.06) 0%, transparent 70%);
+  overflow: hidden;
 }
 
-#arch-title {
-  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+/* Inner border of arch tube — separate element positioned on #jukebox */
+#arch-inner-border {
+  position: absolute;
+  top: var(--tube-width);
+  left: calc(var(--tube-width) - 1px);
+  right: calc(var(--tube-width) - 1px);
+  height: calc(var(--arch-height) - var(--tube-width));
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  border: 1px solid rgba(255,140,0,0.35);
+  border-bottom: none;
+  pointer-events: none;
+  z-index: var(--z-interactive);
+}
+
+/* Separator line — spans full width between tubes */
+#arch-separator {
+  flex: 0 0 auto;
+  height: 3px;
+  background: rgba(255,140,0,0.3);
+  z-index: var(--z-content);
+}
+
+/* --- Apex Badge ("D") — on top of tubes --- */
+#arch-badge {
+  position: absolute;
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(10,10,10,0.95);
+  border: 2px solid var(--neon-orange);
+  box-shadow: 0 0 8px rgba(255,140,0,0.5), 0 0 16px rgba(255,140,0,0.3), inset 0 0 6px rgba(255,140,0,0.2);
+  display: flex; align-items: center; justify-content: center;
+  z-index: calc(var(--z-bubbles) + 2);
+}
+
+.badge-d {
+  font-family: 'NeoNeon', sans-serif;
+  font-size: 14px;
   color: var(--neon-orange);
-  text-shadow: var(--glow-orange);
-  margin-bottom: 12px;
+  text-shadow: 0 0 4px #ff8c00, 0 0 8px #ff8c0088, 0 0 16px #ff8c0044;
+  line-height: 1;
+}
+
+/* --- VU Visualizer Canvas --- */
+#vu-canvas {
+  position: absolute;
+  left: var(--tube-width); right: var(--tube-width);
+  top: 0; bottom: 0;
+  width: calc(100% - var(--tube-width) - var(--tube-width));
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+#vu-canvas.active {
+  opacity: 1;
 }
 
 /* --- Vinyl Record --- */
 #vinyl-container {
-  position: relative; width: 120px; height: 120px;
-  margin: 8px 0;
+  position: relative; width: 100px; height: 100px;
+  margin-top: 4px; margin-bottom: -10px;
+  z-index: 1;
 }
 
 #vinyl {
@@ -122,35 +263,130 @@ html, body {
   border: 3px solid #333;
   box-shadow: 0 0 15px rgba(255,140,0,0.2), inset 0 0 30px rgba(0,0,0,0.8);
   will-change: transform;
-  animation: vinyl-spin 3s linear infinite;
+  animation: vinyl-spin 1.8s linear infinite;
   animation-play-state: paused;
 }
 
 #vinyl-label {
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 40px; height: 40px; border-radius: 50%;
-  background: radial-gradient(circle, var(--neon-orange) 0%, #8b4500 60%, #4a2500 100%);
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #4a2500;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 0 8px rgba(255,140,0,0.4);
+  overflow: hidden;
 }
 
-#vinyl-label::after {
-  content: ''; width: 6px; height: 6px; border-radius: 50%;
-  background: #111; border: 1px solid #333;
+.label-upper {
+  position: absolute; top: 0; left: 0; right: 0; height: 50%;
+  background: linear-gradient(135deg, #2a1800 0%, #4a2500 40%, #3a1e00 100%);
+  border-bottom: 1px solid rgba(255,200,100,0.2);
+}
+.label-upper::before {
+  content: '';
+  position: absolute; top: 4px; left: 6px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,140,0,0.6) 0%, transparent 70%);
+}
+.label-upper::after {
+  content: '';
+  position: absolute; top: 3px; right: 5px;
+  width: 12px; height: 5px;
+  background: rgba(255,140,0,0.15);
+  border-radius: 2px;
+}
+
+.label-lower {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 50%;
+  background: linear-gradient(180deg, #8b5a00 0%, #cc8800 50%, #aa7000 100%);
+}
+.label-lower::before {
+  content: '';
+  position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+  width: 20px; height: 3px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 1px;
+}
+.label-lower::after {
+  content: '';
+  position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  width: 16px; height: 2px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 1px;
+}
+
+.label-ring {
+  position: absolute; inset: 2px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,200,100,0.25);
+  pointer-events: none; z-index: 1;
+}
+
+.label-dot {
+  position: absolute;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: #111; border: 1px solid #444;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+/* --- Stylus Arm --- */
+#stylus-arm {
+  position: absolute;
+  top: 6px; right: -20px;
+  width: 50px; height: 85px;
+  transform: rotate(-20deg);
+  transform-origin: 43px 7px;
+  pointer-events: none;
+  z-index: 2;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#stylus-arm.playing {
+  transform: rotate(30deg);
+}
+
+.stylus-base {
+  position: absolute;
+  top: 0; right: 0;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #444;
+  border: 2px solid #666;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+
+.stylus-arm-bar {
+  position: absolute;
+  top: 12px; right: 5px;
+  width: 3px; height: 58px;
+  background: linear-gradient(180deg, #888 0%, #555 100%);
+  border-radius: 2px;
+  transform: rotate(2deg);
+  transform-origin: top center;
+}
+
+.stylus-head {
+  position: absolute;
+  bottom: 6px; right: 1px;
+  width: 8px; height: 12px;
+  background: #666;
+  border-radius: 2px 2px 1px 1px;
+  border: 1px solid #888;
+  box-shadow: 0 2px 3px rgba(0,0,0,0.4);
+}
+
+.stylus-head::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 50%; transform: translateX(-50%);
+  width: 2px; height: 3px;
+  background: #ccc;
+  border-radius: 0 0 1px 1px;
 }
 
 @keyframes vinyl-spin {
   to { transform: rotate(360deg); }
-}
-
-/* --- Now Playing --- */
-#now-playing {
-  font-size: 13px; color: var(--text-primary);
-  text-align: center; margin-top: 8px;
-  max-width: 100%; overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap;
-  min-height: 18px;
 }
 
 /* --- Song List --- */
@@ -159,26 +395,46 @@ html, body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
-  padding: 8px 36px;
+  padding: 0;
   z-index: var(--z-content);
+  /* Diamond lattice fills empty space behind song items */
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 14px,
+    rgba(255,140,0,0.06) 14px,
+    rgba(255,140,0,0.06) 15px
+  ),
+  repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 14px,
+    rgba(255,140,0,0.06) 14px,
+    rgba(255,140,0,0.06) 15px
+  );
 }
 
 .song-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px;
+  padding: 10px calc(var(--tube-width) + 4px);
   min-height: 44px;
-  border-radius: 4px;
+  border-radius: 0;
   cursor: pointer;
   transition: background 0.15s;
   border-bottom: 1px solid rgba(255,140,0,0.06);
+  background: var(--bg-dark);
+}
+
+.song-item:last-child {
+  border-bottom: none;
 }
 
 .song-item:hover {
-  background: rgba(255,140,0,0.08);
+  background: #151005;
 }
 
 .song-item--active {
-  background: rgba(255,140,0,0.12);
+  background: #1a1000;
   box-shadow: inset 0 0 12px rgba(255,140,0,0.1), 0 0 6px rgba(255,140,0,0.15);
 }
 
@@ -188,13 +444,17 @@ html, body {
 }
 
 .song-item--selected {
-  outline: 2px solid var(--neon-orange);
-  outline-offset: -2px;
+  /* No visible highlight — selection is tracked internally for keyboard nav */
+}
+
+.song-item:focus-visible {
+  outline: none;
+  background: #151005;
 }
 
 .song-number {
   font-size: 11px; color: var(--text-secondary);
-  min-width: 20px;
+  min-width: 18px;
 }
 
 .song-title {
@@ -205,7 +465,7 @@ html, body {
 /* --- Controls Bar --- */
 #controls {
   flex: 0 0 auto;
-  padding: 10px 36px;
+  padding: 10px calc(var(--tube-width) + 4px);
   padding-bottom: max(10px, env(safe-area-inset-bottom));
   z-index: var(--z-content);
   background: linear-gradient(0deg, rgba(26,8,0,0.9) 0%, transparent 100%);
@@ -214,20 +474,20 @@ html, body {
 
 /* Progress Bar */
 #progress-container {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 10px;
   margin-bottom: 8px;
 }
 
 #progress-bar {
-  flex: 1; height: 6px; border-radius: 3px;
+  flex: 1; border-radius: 3px;
   background: #222; position: relative;
   cursor: pointer; touch-action: none;
-  min-height: 44px;
+  height: 20px;
   display: flex; align-items: center;
 }
 
 #progress-bar-inner {
-  height: 6px; width: 100%; border-radius: 3px;
+  height: 100%; width: 100%; border-radius: 3px;
   background: #222; position: relative; overflow: hidden;
 }
 
@@ -249,7 +509,7 @@ html, body {
 
 .time-display {
   font-size: 10px; color: var(--text-secondary);
-  min-width: 32px; text-align: center;
+  min-width: 36px; text-align: center;
 }
 
 /* Transport Controls */
@@ -265,16 +525,27 @@ html, body {
   border-radius: 50%; color: var(--text-primary);
   font-size: 18px; cursor: pointer;
   transition: all 0.15s;
+  padding: 0;
 }
+
+.transport-btn svg { display: block; }
 
 .transport-btn:hover, .transport-btn:focus-visible {
   border-color: var(--neon-orange);
   box-shadow: var(--glow-orange);
+  color: var(--neon-orange);
 }
 
 .transport-btn--play {
   width: 52px; height: 52px; font-size: 22px;
-  border-color: var(--neon-orange);
+  border-color: #cc2222;
+  color: #cc2222;
+}
+
+.transport-btn--play:hover, .transport-btn--play:focus-visible {
+  border-color: #ff3333;
+  box-shadow: 0 0 10px #ff333366, 0 0 20px #ff333333;
+  color: #ff3333;
 }
 
 /* Mode Controls */
@@ -286,10 +557,13 @@ html, body {
   width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
   background: none; border: 1px solid rgba(255,140,0,0.15);
-  border-radius: 8px; color: var(--text-secondary);
+  border-radius: 50%; color: var(--text-secondary);
   font-size: 16px; cursor: pointer;
   transition: all 0.15s;
+  padding: 0;
 }
+
+.mode-btn svg { display: block; }
 
 .mode-btn:hover, .mode-btn:focus-visible {
   border-color: var(--neon-orange);
@@ -330,12 +604,47 @@ html, body {
 .mute-btn {
   width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
-  background: none; border: none;
+  background: none; border: 1px solid rgba(255,140,0,0.15);
+  border-radius: 50%;
   color: var(--text-secondary); font-size: 18px;
-  cursor: pointer;
+  cursor: pointer; padding: 0;
+  transition: all 0.15s;
 }
 
+.mute-btn:hover, .mute-btn:focus-visible {
+  border-color: var(--neon-orange);
+  color: var(--text-primary);
+}
+
+.mute-btn svg { display: block; }
 .mute-btn.muted { color: #555; }
+
+/* --- Jukebox Footer --- */
+#jukebox-footer {
+  flex: 0 0 auto;
+  height: 36px;
+  background: linear-gradient(180deg, #1a0800 0%, #0d0400 50%, #080200 100%);
+  border-top: 3px solid rgba(255,140,0,0.3);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  z-index: var(--z-content);
+}
+
+#jukebox-footer::before {
+  content: '';
+  position: absolute;
+  top: 4px; left: 20%; right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,140,0,0.2), transparent);
+}
+
+#jukebox-footer::after {
+  content: '';
+  position: absolute;
+  bottom: 6px; left: 30%; right: 30%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,140,0,0.15), transparent);
+}
 
 /* --- Loading Overlay --- */
 #loading-overlay {
@@ -383,7 +692,6 @@ html, body {
   pointer-events: auto;
 }
 
-/* --- Empty Library --- */
 .empty-library {
   display: flex; align-items: center; justify-content: center;
   height: 100%; color: var(--text-secondary);
@@ -391,7 +699,6 @@ html, body {
   padding: 20px;
 }
 
-/* --- Focus States --- */
 :focus-visible {
   outline: 2px solid var(--neon-orange);
   outline-offset: 2px;
@@ -401,7 +708,6 @@ html, body {
   outline: none;
 }
 
-/* --- Accessibility: Reduced Motion --- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation: none !important;
@@ -409,44 +715,37 @@ html, body {
   }
 }
 
-/* --- Responsive: Landscape --- */
 @media (orientation: landscape) and (max-height: 500px) {
-  #arch { min-height: 120px; padding: 8px 40px; }
-  #vinyl-container { width: 80px; height: 80px; }
-  #arch-title { font-size: 9px; margin-bottom: 6px; }
-  #now-playing { font-size: 11px; }
-  #song-list { padding: 4px 36px; }
-  .song-item { padding: 6px 12px; min-height: 36px; }
-  #controls { padding: 6px 36px; }
+  :root { --arch-height: 100px; --tube-width: 16px; }
+  #vinyl-container { width: 60px; height: 60px; }
+  #arch-badge { width: 22px; height: 22px; }
+  .badge-d { font-size: 11px; }
+  .song-item { padding: 6px 8px; min-height: 36px; }
 }
 
 @media (orientation: landscape) {
   #jukebox {
-    padding-left: max(env(safe-area-inset-left), 40px);
-    padding-right: max(env(safe-area-inset-right), 40px);
+    padding-left: max(env(safe-area-inset-left), 20px);
+    padding-right: max(env(safe-area-inset-right), 20px);
   }
 }
 
-/* --- Responsive: Tablet --- */
 @media (min-width: 768px) and (max-width: 1024px) {
-  #jukebox { max-width: 480px; }
+  #jukebox { max-width: var(--jukebox-width); }
 }
 
-/* --- Responsive: Desktop --- */
 @media (min-width: 1025px) {
   body {
     background: radial-gradient(ellipse at 50% 50%, #1a0800 0%, #0a0a0a 60%);
   }
   #jukebox {
-    max-width: 480px;
-    border-radius: 20px;
+    max-width: var(--jukebox-width);
     margin-top: 20px;
     height: calc(100% - 40px);
     box-shadow: 0 0 40px rgba(255,140,0,0.1), 0 20px 60px rgba(0,0,0,0.5);
   }
 }
 
-/* --- Screen Reader Only --- */
 .sr-only {
   position: absolute; width: 1px; height: 1px;
   padding: 0; margin: -1px; overflow: hidden;
@@ -456,20 +755,43 @@ html, body {
 </head>
 <body>
 <div id="jukebox">
-    <!-- Bubble Tubes -->
+    <!-- Apex Badge — sits ON TOP of the tubes at the arch apex -->
+    <div id="arch-badge" aria-hidden="true"><span class="badge-d">D</span></div>
+
+    <!-- Bubble Tubes — form the jukebox frame -->
+    <div class="bubble-tube-arch" id="bubble-arch" aria-hidden="true"></div>
     <div class="bubble-tube bubble-tube--left" id="bubble-left" aria-hidden="true"></div>
     <div class="bubble-tube bubble-tube--right" id="bubble-right" aria-hidden="true"></div>
+    <div id="arch-inner-border" aria-hidden="true"></div>
 
-    <!-- Arch Section (Top) -->
+    <!-- Bubble container — clips bubbles to tube regions only -->
+    <div class="bubble-container" id="bubble-container" aria-hidden="true"></div>
+
+    <!-- Arch Section (interior: record player + visualizer) -->
     <div id="arch">
-        <div id="arch-title">Dosswerks Arcade Jukebox</div>
+        <!-- VU Visualizer (behind vinyl, fills arch interior) -->
+        <canvas id="vu-canvas" aria-hidden="true"></canvas>
+
+        <!-- Vinyl + Stylus -->
         <div id="vinyl-container">
             <div id="vinyl" aria-hidden="true">
-                <div id="vinyl-label"></div>
+                <div id="vinyl-label">
+                    <div class="label-upper"></div>
+                    <div class="label-lower"></div>
+                    <div class="label-ring"></div>
+                    <div class="label-dot"></div>
+                </div>
+            </div>
+            <div id="stylus-arm" aria-hidden="true">
+                <div class="stylus-base"></div>
+                <div class="stylus-arm-bar"></div>
+                <div class="stylus-head"></div>
             </div>
         </div>
-        <div id="now-playing" aria-live="polite">Select a track...</div>
     </div>
+
+    <!-- Separator line between record area and song list -->
+    <div id="arch-separator" aria-hidden="true"></div>
 
     <!-- Song List -->
     <div id="song-list"></div>
@@ -489,24 +811,41 @@ html, body {
 
         <!-- Transport -->
         <div id="transport">
-            <button class="transport-btn" id="btn-prev" aria-label="Previous track">⏮</button>
-            <button class="transport-btn transport-btn--play" id="btn-play" aria-label="Play">▶</button>
-            <button class="transport-btn" id="btn-next" aria-label="Next track">⏭</button>
+            <button class="transport-btn" id="btn-prev" aria-label="Previous track">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="3" height="14"/><polygon points="21,5 9,12 21,19"/></svg>
+            </button>
+            <button class="transport-btn transport-btn--play" id="btn-play" aria-label="Play">
+                <svg class="icon-play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>
+                <svg class="icon-pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>
+            </button>
+            <button class="transport-btn" id="btn-next" aria-label="Next track">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="3,5 15,12 3,19"/><rect x="18" y="5" width="3" height="14"/></svg>
+            </button>
         </div>
 
         <!-- Mode Controls -->
         <div id="mode-controls">
-            <button class="mode-btn" id="btn-loop" aria-label="Playback mode: play-through">▶️</button>
-            <button class="mode-btn" id="btn-shuffle" aria-label="Shuffle: off">🔀</button>
+            <button class="mode-btn" id="btn-loop" aria-label="Playback mode: play-through">
+                <svg class="icon-loop" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17,1 21,5 17,9"/><path d="M3,11V9a4,4,0,0,1,4-4H21"/><polyline points="7,23 3,19 7,15"/><path d="M21,13v2a4,4,0,0,1-4,4H3"/></svg>
+            </button>
+            <button class="mode-btn" id="btn-shuffle" aria-label="Shuffle: off">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16,3 21,3 21,8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21,16 21,21 16,21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+            </button>
         </div>
 
         <!-- Volume -->
         <div id="volume-container">
-            <button class="mute-btn" id="btn-mute" aria-label="Mute">🔊</button>
+            <button class="mute-btn" id="btn-mute" aria-label="Mute">
+                <svg class="icon-vol" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="3,9 7,9 12,4 12,20 7,15 3,15"/><path d="M16,9 C17.5,10.5 17.5,13.5 16,15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19,6 C22,9 22,15 19,18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <svg class="icon-muted" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:none"><polygon points="3,9 7,9 12,4 12,20 7,15 3,15"/><line x1="16" y1="9" x2="22" y2="15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="22" y1="9" x2="16" y2="15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </button>
             <input type="range" id="volume-slider" min="0" max="100" value="100"
                    aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
         </div>
     </div>
+
+    <!-- Jukebox Footer -->
+    <div id="jukebox-footer" aria-hidden="true"></div>
 
     <!-- Loading Overlay -->
     <div id="loading-overlay" aria-hidden="true">
@@ -1554,6 +1893,14 @@ class PlayerEngine {
     };
   }
 
+  /**
+   * Get the audio pipeline instance (for VU visualizer access).
+   * @returns {AudioPipeline}
+   */
+  getAudioPipeline() {
+    return this._audioPipeline;
+  }
+
   setSelectedIndex(index) {
     this._selectedTrackIndex = index;
   }
@@ -2009,7 +2356,6 @@ class UIController {
    */
   setPlayButtonState(isPlaying) {
     if (this._el.playPauseBtn) {
-      this._el.playPauseBtn.textContent = isPlaying ? '⏸' : '▶';
       this._el.playPauseBtn.setAttribute(
         'aria-label',
         isPlaying ? 'Pause' : 'Play'
@@ -2023,15 +2369,32 @@ class UIController {
    */
   setLoopButtonState(mode) {
     if (this._el.loopBtn) {
-      const labels = {
-        'loop-one': '🔂',
-        'loop-all': '🔁',
-        'play-through': '▶️',
-        'stop': '⏹',
-      };
-      this._el.loopBtn.textContent = labels[mode] || '▶️';
       this._el.loopBtn.setAttribute('aria-label', `Playback mode: ${mode}`);
       this._el.loopBtn.classList.toggle('active', mode === 'loop-one' || mode === 'loop-all');
+
+      // Update the loop icon SVG to indicate mode
+      const svg = this._el.loopBtn.querySelector('.icon-loop');
+      if (svg && mode === 'loop-one') {
+        // Add a "1" indicator for loop-one
+        let oneText = svg.querySelector('.loop-one-indicator');
+        if (!oneText) {
+          oneText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          oneText.classList.add('loop-one-indicator');
+          oneText.setAttribute('x', '12');
+          oneText.setAttribute('y', '15');
+          oneText.setAttribute('text-anchor', 'middle');
+          oneText.setAttribute('font-size', '8');
+          oneText.setAttribute('font-weight', 'bold');
+          oneText.setAttribute('fill', 'currentColor');
+          oneText.setAttribute('stroke', 'none');
+          oneText.textContent = '1';
+          svg.appendChild(oneText);
+        }
+        oneText.style.display = '';
+      } else if (svg) {
+        const oneText = svg.querySelector('.loop-one-indicator');
+        if (oneText) oneText.style.display = 'none';
+      }
     }
   }
 
@@ -2393,7 +2756,21 @@ async function initApp() {
   const songListRenderer = new SongListRenderer(
     ui.songListContainer,
     ui.srAnnouncements,
-    (index) => playerEngine.play(index)
+    (index) => {
+      const s = playerEngine.getState();
+      if (s.status === 'idle' || s.status === 'error') {
+        // Starting from stopped — swing arm first
+        if (stylusArm && !stylusArm.classList.contains('playing')) {
+          stylusArm.classList.add('playing');
+          setTimeout(() => playerEngine.play(index), 800);
+        } else {
+          playerEngine.play(index);
+        }
+      } else {
+        // Already playing/paused — just switch tracks, arm stays on
+        playerEngine.play(index);
+      }
+    }
   );
 
   const playerEngine = new PlayerEngine(tracks, { gainNormalization: true });
@@ -2404,6 +2781,138 @@ async function initApp() {
   const bubbleElements = [];
   document.querySelectorAll('.bubble').forEach((el) => bubbleElements.push(el));
   animController.setElements(ui.vinylRecord, bubbleElements);
+
+  // Stylus arm reference
+  const stylusArm = document.getElementById('stylus-arm');
+
+  // Set up VU Visualizer
+  const vuCanvas = document.getElementById('vu-canvas');
+  let vuAnimationId = null;
+  let vuAnalyser = null;
+
+  function initVUVisualizer() {
+    const pipeline = playerEngine.getAudioPipeline();
+    if (!pipeline || !pipeline.isWebAudioAvailable()) return;
+
+    const ctx = pipeline.getContext();
+    if (!ctx) return;
+
+    vuAnalyser = ctx.createAnalyser();
+    vuAnalyser.fftSize = 256;
+    vuAnalyser.smoothingTimeConstant = 0.75;
+
+    try {
+      const gainNode = pipeline._gainNode;
+      if (gainNode) {
+        gainNode.connect(vuAnalyser);
+      }
+    } catch (e) {
+      // Fallback: VU won't work but app continues
+    }
+  }
+
+  function startVU() {
+    if (!vuCanvas || !vuAnalyser) return;
+    vuCanvas.classList.add('active');
+    drawVU();
+  }
+
+  function stopVU() {
+    if (vuCanvas) vuCanvas.classList.remove('active');
+    if (vuAnimationId) {
+      cancelAnimationFrame(vuAnimationId);
+      vuAnimationId = null;
+    }
+  }
+
+  function drawVU() {
+    if (!vuAnalyser || !vuCanvas) return;
+    const canvasCtx = vuCanvas.getContext('2d');
+    if (!canvasCtx) return;
+
+    const w = vuCanvas.clientWidth;
+    const h = vuCanvas.clientHeight;
+
+    if (vuCanvas.width !== w || vuCanvas.height !== h) {
+      vuCanvas.width = w;
+      vuCanvas.height = h;
+    }
+
+    // Use time-domain data for even distribution across bars
+    const bufferLength = vuAnalyser.fftSize;
+    const dataArray = new Uint8Array(bufferLength);
+    vuAnalyser.getByteTimeDomainData(dataArray);
+
+    canvasCtx.clearRect(0, 0, w, h);
+
+    const barCount = 32;
+    const barWidth = w / barCount;
+    const maxBarHeight = h * 0.75;
+    const samplesPerBar = Math.floor(bufferLength / barCount);
+
+    // Initialize smoothed values on first call
+    if (!drawVU._smoothed) {
+      drawVU._smoothed = new Float32Array(barCount).fill(0.15);
+    }
+    const smoothed = drawVU._smoothed;
+    const smoothing = 0.82; // Higher = smoother (0-1)
+
+    // Color gradient: red → orange → green → cyan → purple
+    function getBarColor(barIndex, intensity) {
+      const ratio = barIndex / barCount;
+      if (ratio < 0.2) {
+        return { top: `rgba(255,50,50,${0.5 + intensity * 0.4})`, bottom: 'rgba(180,20,20,0.1)' };
+      } else if (ratio < 0.4) {
+        return { top: `rgba(255,140,0,${0.5 + intensity * 0.4})`, bottom: 'rgba(200,100,0,0.1)' };
+      } else if (ratio < 0.6) {
+        return { top: `rgba(57,255,20,${0.5 + intensity * 0.4})`, bottom: 'rgba(30,150,10,0.1)' };
+      } else if (ratio < 0.8) {
+        return { top: `rgba(0,191,255,${0.5 + intensity * 0.4})`, bottom: 'rgba(0,100,180,0.1)' };
+      } else {
+        return { top: `rgba(155,89,182,${0.5 + intensity * 0.4})`, bottom: 'rgba(100,40,130,0.1)' };
+      }
+    }
+
+    for (let i = 0; i < barCount; i++) {
+      // RMS amplitude for this bar's chunk
+      const startSample = i * samplesPerBar;
+      let sumSquares = 0;
+      for (let s = startSample; s < startSample + samplesPerBar && s < bufferLength; s++) {
+        const normalized = (dataArray[s] - 128) / 128;
+        sumSquares += normalized * normalized;
+      }
+      const rms = Math.sqrt(sumSquares / samplesPerBar);
+      const target = Math.min(1.0, rms * 3.5);
+
+      // Smooth: rise fast, fall slow
+      if (target > smoothed[i]) {
+        smoothed[i] = smoothed[i] * 0.4 + target * 0.6;
+      } else {
+        smoothed[i] = smoothed[i] * smoothing + target * (1 - smoothing);
+      }
+
+      const intensity = smoothed[i];
+      const value = intensity * 0.6 + 0.15;
+      const barHeight = value * maxBarHeight;
+      const x = i * barWidth;
+      const y = h - barHeight;
+
+      const colors = getBarColor(i, intensity);
+      const gradient = canvasCtx.createLinearGradient(x, y, x, h);
+      gradient.addColorStop(0, colors.top);
+      gradient.addColorStop(1, colors.bottom);
+
+      canvasCtx.fillStyle = gradient;
+      canvasCtx.fillRect(x + 1, y, barWidth - 2, barHeight);
+
+      if (intensity > 0.2) {
+        canvasCtx.fillStyle = colors.top.replace(/[\d.]+\)$/, '0.9)');
+        canvasCtx.fillRect(x + 1, y - 2, barWidth - 2, 2);
+      }
+    }
+
+    vuAnimationId = requestAnimationFrame(drawVU);
+  }
 
   // Visibility controller
   const visController = new VisibilityController({
@@ -2444,26 +2953,49 @@ async function initApp() {
   }
 
   // Wire up Player Engine events
+  let isPlayingFromStop = false; // Track if we're starting from a stopped state
+
   playerEngine.on('play', () => {
     animController.setVinylSpinning(true);
     uiController.setPlayButtonState(true);
+    if (stylusArm && !stylusArm.classList.contains('playing')) {
+      stylusArm.classList.add('playing');
+    }
+    if (!vuAnalyser) initVUVisualizer();
+    startVU();
+    // Toggle play/pause SVG icons
+    const playIcon = ui.playPauseBtn.querySelector('.icon-play');
+    const pauseIcon = ui.playPauseBtn.querySelector('.icon-pause');
+    if (playIcon) playIcon.style.display = 'none';
+    if (pauseIcon) pauseIcon.style.display = 'block';
   });
 
   playerEngine.on('pause', () => {
     animController.setVinylSpinning(false);
     uiController.setPlayButtonState(false);
+    stopVU();
+    // Toggle play/pause SVG icons
+    const playIcon = ui.playPauseBtn.querySelector('.icon-play');
+    const pauseIcon = ui.playPauseBtn.querySelector('.icon-pause');
+    if (playIcon) playIcon.style.display = 'block';
+    if (pauseIcon) pauseIcon.style.display = 'none';
   });
 
   playerEngine.on('stop', () => {
     animController.setVinylSpinning(false);
     uiController.setPlayButtonState(false);
     uiController.updateProgress(0, 0);
-    uiController.setNowPlaying('Select a track...');
+    if (stylusArm) stylusArm.classList.remove('playing');
+    stopVU();
+    // Toggle play/pause SVG icons
+    const playIcon = ui.playPauseBtn.querySelector('.icon-play');
+    const pauseIcon = ui.playPauseBtn.querySelector('.icon-pause');
+    if (playIcon) playIcon.style.display = 'block';
+    if (pauseIcon) pauseIcon.style.display = 'none';
   });
 
   playerEngine.on('trackChange', (data) => {
     songListRenderer.setActiveTrack(data.index);
-    uiController.setNowPlaying(data.track.title);
   });
 
   playerEngine.on('progress', (data) => {
@@ -2498,9 +3030,17 @@ async function initApp() {
     } else if (s.status === 'paused') {
       playerEngine.resume();
     } else {
-      // Start from selected or first track
+      // Starting from stopped state — swing arm first, then play
       const idx = s.selectedTrackIndex >= 0 ? s.selectedTrackIndex : 0;
-      playerEngine.play(idx);
+      if (stylusArm && !stylusArm.classList.contains('playing')) {
+        stylusArm.classList.add('playing');
+        // Wait for arm animation to complete (0.8s transition) before starting audio
+        setTimeout(() => {
+          playerEngine.play(idx);
+        }, 800);
+      } else {
+        playerEngine.play(idx);
+      }
     }
   });
 
@@ -2531,8 +3071,19 @@ async function initApp() {
   ui.muteBtn.addEventListener('click', () => {
     const s = playerEngine.getState();
     playerEngine.setMute(!s.muted);
-    ui.muteBtn.textContent = s.muted ? '🔊' : '🔇';
-    ui.muteBtn.classList.toggle('muted', !s.muted);
+    const volIcon = ui.muteBtn.querySelector('.icon-vol');
+    const mutedIcon = ui.muteBtn.querySelector('.icon-muted');
+    if (!s.muted) {
+      // Now muting
+      if (volIcon) volIcon.style.display = 'none';
+      if (mutedIcon) mutedIcon.style.display = 'block';
+      ui.muteBtn.classList.add('muted');
+    } else {
+      // Now unmuting
+      if (volIcon) volIcon.style.display = 'block';
+      if (mutedIcon) mutedIcon.style.display = 'none';
+      ui.muteBtn.classList.remove('muted');
+    }
   });
 
   // Progress bar scrub
@@ -2574,7 +3125,7 @@ function getUIElements() {
     progressFill: document.getElementById('progress-fill'),
     elapsedTime: document.getElementById('elapsed-time'),
     totalTime: document.getElementById('total-time'),
-    nowPlayingTitle: document.getElementById('now-playing'),
+    nowPlayingTitle: null,
     vinylRecord: document.getElementById('vinyl'),
     playPauseBtn: document.getElementById('btn-play'),
     skipForwardBtn: document.getElementById('btn-next'),
@@ -2621,30 +3172,46 @@ function hidLoading(ui) {
 
 function generateBubbles() {
   const colors = ['#ff8c00', '#ffaa00', '#ff1493', '#00bfff', '#39ff14', '#9b59b6'];
-  const tubes = [document.getElementById('bubble-left'), document.getElementById('bubble-right')];
+  const container = document.getElementById('bubble-container');
+  if (!container) return;
 
-  tubes.forEach((tube) => {
-    if (!tube) return;
-    for (let i = 0; i < 8; i++) {
-      const bubble = document.createElement('div');
-      bubble.classList.add('bubble');
-      const size = 4 + Math.random() * 8;
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      const duration = 6 + Math.random() * 8;
-      const delay = Math.random() * duration;
-      const left = Math.random() * 20;
+  // Left side bubbles — travel full path from bottom to badge
+  for (let i = 0; i < 18; i++) {
+    const bubble = document.createElement('div');
+    bubble.classList.add('bubble', 'bubble-path-left');
+    const size = 3 + Math.random() * 5;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const duration = 25 + Math.random() * 15;
+    const delay = Math.random() * duration;
 
-      bubble.style.width = `${size}px`;
-      bubble.style.height = `${size}px`;
-      bubble.style.left = `${left}px`;
-      bubble.style.background = color;
-      bubble.style.boxShadow = `0 0 ${size}px ${color}44`;
-      bubble.style.animationDuration = `${duration}s`;
-      bubble.style.animationDelay = `-${delay}s`;
+    bubble.style.width = `${size}px`;
+    bubble.style.height = `${size}px`;
+    bubble.style.background = color;
+    bubble.style.boxShadow = `0 0 ${size}px ${color}66`;
+    bubble.style.animationDuration = `${duration}s`;
+    bubble.style.animationDelay = `-${delay}s`;
 
-      tube.appendChild(bubble);
-    }
-  });
+    container.appendChild(bubble);
+  }
+
+  // Right side bubbles
+  for (let i = 0; i < 18; i++) {
+    const bubble = document.createElement('div');
+    bubble.classList.add('bubble', 'bubble-path-right');
+    const size = 3 + Math.random() * 5;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const duration = 25 + Math.random() * 15;
+    const delay = Math.random() * duration;
+
+    bubble.style.width = `${size}px`;
+    bubble.style.height = `${size}px`;
+    bubble.style.background = color;
+    bubble.style.boxShadow = `0 0 ${size}px ${color}66`;
+    bubble.style.animationDuration = `${duration}s`;
+    bubble.style.animationDelay = `-${delay}s`;
+
+    container.appendChild(bubble);
+  }
 }
 
 // Boot on DOMContentLoaded
