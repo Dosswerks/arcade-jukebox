@@ -2216,7 +2216,7 @@ class SongListRenderer {
    * Update the selected (keyboard-focused) track.
    * @param {number} index - Index of focused track (-1 for none)
    */
-  setSelectedTrack(index) {
+  setSelectedTrack(index, { focus = true } = {}) {
     // Remove previous selection
     if (this._selectedIndex >= 0) {
       const prev = this._container.querySelector(`[data-index="${this._selectedIndex}"]`);
@@ -2236,7 +2236,7 @@ class SongListRenderer {
         current.classList.add('song-item--selected');
         current.setAttribute('aria-selected', 'true');
         current.setAttribute('tabindex', '0');
-        current.focus();
+        if (focus) current.focus();
       }
     }
   }
@@ -2976,6 +2976,9 @@ async function initApp() {
   // Render song list
   songListRenderer.render(tracks);
 
+  // Ensure list starts at the top
+  ui.songListContainer.scrollTop = 0;
+
   // Generate bubble elements
   generateBubbles();
 
@@ -2995,7 +2998,7 @@ async function initApp() {
       playerEngine.setSelectedIndex(trackIdx);
     }
   } else if (playerState.selectedTrackIndex >= 0) {
-    songListRenderer.setSelectedTrack(playerState.selectedTrackIndex);
+    songListRenderer.setSelectedTrack(playerState.selectedTrackIndex, { focus: false });
   }
 
   // Wire up Player Engine events
