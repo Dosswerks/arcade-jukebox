@@ -1350,6 +1350,20 @@ class AudioPipeline {
         this._analyser.fftSize = 2048;
         this._gainNode.connect(this._context.destination);
         this._webAudioAvailable = true;
+
+        // Auto-resume AudioContext when iOS/mobile interrupts it
+        this._context.addEventListener('statechange', () => {
+          if (this._context.state === 'interrupted' || this._context.state === 'suspended') {
+            this._context.resume().catch(() => {});
+          }
+        });
+
+        // Also resume on visibility change (belt-and-suspenders for mobile)
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible' && this._context.state !== 'running') {
+            this._context.resume().catch(() => {});
+          }
+        });
       }
     } catch (e) {
       this._webAudioAvailable = false;
@@ -1789,6 +1803,16 @@ class PlayerEngine {
       });
     }
 
+    // Update Media Session for background/lock-screen playback
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.title,
+        artist: 'Dosswerks',
+        album: 'Arcade Jukebox',
+      });
+      navigator.mediaSession.playbackState = 'playing';
+    }
+
     this._persistState();
     this._schedulePrefetch();
   }
@@ -1797,6 +1821,9 @@ class PlayerEngine {
     if (this._status !== 'playing' && this._status !== 'buffering') return;
     this._audio.pause();
     this._status = 'paused';
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'paused';
+    }
     this._emit('pause');
   }
 
@@ -3082,6 +3109,28 @@ async function initApp() {
   playerEngine.on('shuffleChange', (data) => {
     uiController.setShuffleButtonState(data.enabled);
   });
+
+  // Media Session API — enables lock-screen/notification controls and background playback
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.setActionHandler('play', () => {
+      const s = playerEngine.getState();
+      if (s.status === 'paused') {
+        playerEngine.resume();
+      } else if (s.status === 'idle' || s.status === 'error') {
+        const idx = s.selectedTrackIndex >= 0 ? s.selectedTrackIndex : 0;
+        playerEngine.play(idx);
+      }
+    });
+    navigator.mediaSession.setActionHandler('pause', () => {
+      playerEngine.pause();
+    });
+    navigator.mediaSession.setActionHandler('previoustrack', () => {
+      playerEngine.skipBack();
+    });
+    navigator.mediaSession.setActionHandler('nexttrack', () => {
+      playerEngine.skipForward();
+    });
+  }
 
   // Wire up transport controls
   ui.playPauseBtn.addEventListener('click', () => {
