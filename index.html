@@ -1350,13 +1350,6 @@ class AudioPipeline {
         this._analyser.fftSize = 2048;
         this._gainNode.connect(this._context.destination);
         this._webAudioAvailable = true;
-
-        // Resume AudioContext when user returns to the page
-        document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible' && this._context.state === 'suspended') {
-            this._context.resume().catch(() => {});
-          }
-        });
       }
     } catch (e) {
       this._webAudioAvailable = false;
@@ -2088,6 +2081,11 @@ class PlayerEngine {
   }
 
   _checkPrefetch() {
+    // Skip prefetch on iOS — extra Audio elements disrupt the active audio session
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOS) return;
+
     // Prefetch next track at 75% progress
     if (!this._prefetchAudio && this._audio.duration) {
       const progress = this._audio.currentTime / this._audio.duration;
@@ -3295,6 +3293,7 @@ function hidLoading(ui) {
 /**
  * Asynchronously loads duration metadata for all tracks and displays
  * the total playlist time in the playlist header.
+ * On iOS/mobile, skips duration loading to avoid interfering with playback.
  * @param {Array<{path: string}>} tracks
  */
 function computePlaylistDuration(tracks) {
@@ -3304,34 +3303,42 @@ function computePlaylistDuration(tracks) {
   // Show track count immediately
   setTextSafe(metaEl, `${tracks.length} tracks`);
 
-  // Load durations sequentially to avoid disrupting active audio on mobile
-  async function loadDurations() {
+  // Detect iOS/iPadOS — creating Audio elements disrupts the active audio session
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS) return;
+
+  // On desktop, load durations after a short delay to avoid competing with initial playback
+  setTimeout(() => {
+    let loaded = 0;
     let totalSeconds = 0;
 
-    for (const track of tracks) {
-      const duration = await new Promise((resolve) => {
-        const audio = new Audio();
-        audio.preload = 'metadata';
-        audio.addEventListener('loadedmetadata', () => {
-          const d = isFinite(audio.duration) ? audio.duration : 0;
-          audio.src = '';
-          audio.remove();
-          resolve(d);
-        });
-        audio.addEventListener('error', () => {
-          audio.src = '';
-          audio.remove();
-          resolve(0);
-        });
-        audio.src = track.path;
+    tracks.forEach((track) => {
+      const audio = new Audio();
+      audio.preload = 'metadata';
+      audio.addEventListener('loadedmetadata', () => {
+        if (isFinite(audio.duration)) totalSeconds += audio.duration;
+        audio.src = '';
+        loaded++;
+        if (loaded === tracks.length) {
+          displayDuration(tracks.length, totalSeconds);
+        }
       });
-      totalSeconds += duration;
-    }
+      audio.addEventListener('error', () => {
+        loaded++;
+        if (loaded === tracks.length) {
+          displayDuration(tracks.length, totalSeconds);
+        }
+      });
+      audio.src = track.path;
+    });
+  }, 2000);
 
-    totalSeconds = Math.floor(totalSeconds);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const secs = totalSeconds % 60;
+  function displayDuration(count, seconds) {
+    const totalSec = Math.floor(seconds);
+    const hours = Math.floor(totalSec / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
 
     let timeStr;
     if (hours > 0) {
@@ -3340,10 +3347,8 @@ function computePlaylistDuration(tracks) {
       timeStr = `${minutes}:${secs.toString().padStart(2, '0')}`;
     }
 
-    setTextSafe(metaEl, `${tracks.length} tracks \u00B7 ${timeStr}`);
+    setTextSafe(metaEl, `${count} tracks \u00B7 ${timeStr}`);
   }
-
-  loadDurations();
 }
 
 function generateBubbles() {
