@@ -228,6 +228,15 @@ html, body {
   text-shadow: 0 1px 0 rgba(255,200,100,0.3);
 }
 
+#playlist-meta {
+  display: block;
+  font-size: 10px;
+  color: rgba(10,10,10,0.7);
+  letter-spacing: 0.5px;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
 /* --- Apex Badge ("D") — on top of tubes --- */
 #arch-badge {
   position: absolute;
@@ -815,6 +824,7 @@ html, body {
     <!-- Playlist Header -->
     <div id="playlist-header">
         <span id="playlist-name"></span>
+        <span id="playlist-meta"></span>
     </div>
 
     <!-- Song List -->
@@ -3163,6 +3173,9 @@ async function initApp() {
   // Set up keyboard navigation
   setupKeyboardNavigation(ui, playerEngine, songListRenderer, tracks);
 
+  // Compute and display playlist total time
+  computePlaylistDuration(tracks);
+
   // Hide loading
   hidLoading(ui);
 }
@@ -3217,6 +3230,49 @@ function hidLoading(ui) {
     ui.loadingOverlay.classList.remove('visible');
     ui.loadingOverlay.setAttribute('aria-hidden', 'true');
   }
+}
+
+/**
+ * Asynchronously loads duration metadata for all tracks and displays
+ * the total playlist time in the playlist header.
+ * @param {Array<{path: string}>} tracks
+ */
+function computePlaylistDuration(tracks) {
+  const metaEl = document.getElementById('playlist-meta');
+  if (!metaEl) return;
+
+  // Show track count immediately
+  setTextSafe(metaEl, `${tracks.length} tracks`);
+
+  // Load durations in parallel
+  const durationPromises = tracks.map((track) => {
+    return new Promise((resolve) => {
+      const audio = new Audio();
+      audio.preload = 'metadata';
+      audio.addEventListener('loadedmetadata', () => {
+        resolve(isFinite(audio.duration) ? audio.duration : 0);
+        audio.src = '';
+      });
+      audio.addEventListener('error', () => resolve(0));
+      audio.src = track.path;
+    });
+  });
+
+  Promise.all(durationPromises).then((durations) => {
+    const totalSeconds = Math.floor(durations.reduce((sum, d) => sum + d, 0));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+
+    let timeStr;
+    if (hours > 0) {
+      timeStr = `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    } else {
+      timeStr = `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    setTextSafe(metaEl, `${tracks.length} tracks \u00B7 ${timeStr}`);
+  });
 }
 
 function generateBubbles() {
