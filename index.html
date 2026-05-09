@@ -209,6 +209,25 @@ html, body {
   z-index: var(--z-content);
 }
 
+/* --- Playlist Header --- */
+#playlist-header {
+  flex: 0 0 auto;
+  background: linear-gradient(180deg, rgba(255,140,0,0.85) 0%, rgba(200,100,0,0.85) 100%);
+  padding: 6px calc(var(--tube-width) + 4px);
+  text-align: center;
+  z-index: var(--z-content);
+  border-bottom: 3px solid rgba(255,140,0,0.3);
+}
+
+#playlist-name {
+  font-family: 'NeoNeon', sans-serif;
+  font-size: 14px;
+  color: #0a0a0a;
+  letter-spacing: 1px;
+  line-height: 1.2;
+  text-shadow: 0 1px 0 rgba(255,200,100,0.3);
+}
+
 /* --- Apex Badge ("D") — on top of tubes --- */
 #arch-badge {
   position: absolute;
@@ -232,9 +251,9 @@ html, body {
 /* --- VU Visualizer Canvas --- */
 #vu-canvas {
   position: absolute;
-  left: var(--tube-width); right: var(--tube-width);
+  left: 0; right: 0;
   top: 0; bottom: 0;
-  width: calc(100% - var(--tube-width) - var(--tube-width));
+  width: 100%;
   height: 100%;
   pointer-events: none;
   z-index: 0;
@@ -793,6 +812,11 @@ html, body {
     <!-- Separator line between record area and song list -->
     <div id="arch-separator" aria-hidden="true"></div>
 
+    <!-- Playlist Header -->
+    <div id="playlist-header">
+        <span id="playlist-name"></span>
+    </div>
+
     <!-- Song List -->
     <div id="song-list"></div>
 
@@ -927,6 +951,7 @@ function parseQueryParams() {
   return {
     track: params.get('track') || null,
     game: params.get('game') || null,
+    playlist: params.get('playlist') || null,
   };
 }
 
@@ -2713,29 +2738,50 @@ async function initApp() {
 
   // Fallback: if tracks.js failed to load (e.g., file:// CORS block),
   // default to empty array so the app shows "Empty Library" gracefully
-  if (typeof window.TRACKS === 'undefined') {
-    window.TRACKS = [];
-  }
-
-  // Check for TRACKS global
-  if (!Array.isArray(window.TRACKS)) {
-    showFatalError(ui, 'Music library could not be loaded');
-    return;
-  }
-
-  if (window.TRACKS.length === 0) {
-    hidLoading(ui);
-    showEmptyLibrary(ui);
-    return;
+  if (typeof window.PLAYLISTS === 'undefined' && typeof window.TRACKS === 'undefined') {
+    window.PLAYLISTS = { default: { name: '', tracks: [] } };
   }
 
   // Parse URL query parameters
   const params = parseQueryParams();
 
+  // Resolve playlist: ?playlist=<key> or fall back to "default"
+  let playlistName = '';
+  let trackFilenames = [];
+
+  if (window.PLAYLISTS && typeof window.PLAYLISTS === 'object') {
+    const playlistKey = params.playlist || 'default';
+    const playlist = window.PLAYLISTS[playlistKey] || window.PLAYLISTS['default'];
+    if (playlist) {
+      playlistName = playlist.name || '';
+      trackFilenames = Array.isArray(playlist.tracks) ? playlist.tracks : [];
+    }
+  } else if (Array.isArray(window.TRACKS)) {
+    // Legacy support: plain TRACKS array
+    trackFilenames = window.TRACKS;
+  }
+
+  // Set playlist header
+  const playlistNameEl = document.getElementById('playlist-name');
+  if (playlistNameEl && playlistName) {
+    setTextSafe(playlistNameEl, playlistName);
+  } else if (playlistNameEl) {
+    // Hide header if no name
+    const playlistHeader = document.getElementById('playlist-header');
+    if (playlistHeader) playlistHeader.style.display = 'none';
+  }
+
+  // Check for tracks
+  if (!Array.isArray(trackFilenames) || trackFilenames.length === 0) {
+    hidLoading(ui);
+    showEmptyLibrary(ui);
+    return;
+  }
+
   // Process manifest (ID3 + title derivation + sort)
   let tracks;
   try {
-    tracks = await processManifest(window.TRACKS);
+    tracks = await processManifest(trackFilenames);
   } catch (e) {
     showFatalError(ui, 'Failed to process music library');
     return;
