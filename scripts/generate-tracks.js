@@ -1,12 +1,25 @@
 #!/usr/bin/env node
 /**
  * Generate tracks.js
- * Scans the assets/ directory for MP3 files and regenerates tracks.js.
+ * Scans the assets/ directory for MP3 files and regenerates tracks.js
+ * using the PLAYLISTS format.
  *
- * Usage: node scripts/generate-tracks.js
+ * Usage:
+ *   node scripts/generate-tracks.js [--playlist <key>] [--name <"Playlist Name">]
+ *
+ * Options:
+ *   --playlist <key>   Playlist key to generate (default: "default")
+ *   --name <name>      Display name for the playlist (default: "Dosswerks Arcade Soundtracks")
+ *
+ * If tracks.js already exists with other playlists, they are preserved.
+ * Only the specified playlist key is updated.
+ *
+ * Examples:
+ *   node scripts/generate-tracks.js
+ *   node scripts/generate-tracks.js --playlist halloween --name "Halloween Spooktacular"
  */
 
-import { readdirSync, writeFileSync } from 'fs';
+import { readdirSync, readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -14,10 +27,53 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const assetsDir = join(__dirname, '..', 'assets');
 const outputFile = join(__dirname, '..', 'tracks.js');
 
+// Parse CLI args
+const args = process.argv.slice(2);
+let playlistKey = 'default';
+let playlistName = 'Dosswerks Arcade Soundtracks';
+
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--playlist' && args[i + 1]) {
+    playlistKey = args[++i];
+  } else if (args[i] === '--name' && args[i + 1]) {
+    playlistName = args[++i];
+  }
+}
+
 try {
   const files = readdirSync(assetsDir)
     .filter((f) => f.toLowerCase().endsWith('.mp3'))
     .sort();
+
+  // Try to load existing playlists from tracks.js
+  let playlists = {};
+  if (existsSync(outputFile)) {
+    try {
+      const existing = readFileSync(outputFile, 'utf-8');
+      // Extract PLAYLISTS object using a sandboxed eval
+      const match = existing.match(/window\.PLAYLISTS\s*=\s*(\{[\s\S]*\});?\s*$/m);
+      if (match) {
+        playlists = new Function(`return ${match[1]}`)();
+      }
+    } catch (e) {
+      // If parsing fails, start fresh
+      playlists = {};
+    }
+  }
+
+  // Update the specified playlist
+  playlists[playlistKey] = {
+    name: playlistName,
+    tracks: files,
+  };
+
+  // Generate output
+  const playlistEntries = Object.entries(playlists).map(([key, pl]) => {
+    const tracksStr = pl.tracks
+      .map((f) => `      '${f.replace(/'/g, "\\'")}'`)
+      .join(',\n');
+    return `  "${key}": {\n    name: "${pl.name.replace(/"/g, '\\"')}",\n    tracks: [\n${tracksStr},\n    ]\n  }`;
+  });
 
   const content = `/**
  * Dosswerks Arcade Jukebox - Track Manifest
@@ -25,15 +81,24 @@ try {
  * Generated: ${new Date().toISOString()}
  *
  * To regenerate: node scripts/generate-tracks.js
+ *
+ * Playlists are loaded via ?playlist=<key> query parameter.
+ * Default playlist is "default" when no parameter is specified.
  */
-window.TRACKS = [
-${files.map((f) => `  '${f.replace(/'/g, "\\'")}',`).join('\n')}
-];
+window.PLAYLISTS = {
+${playlistEntries.join(',\n')}
+};
 `;
 
   writeFileSync(outputFile, content, 'utf-8');
-  console.log(`Generated tracks.js with ${files.length} track(s):`);
+  console.log(`Generated tracks.js — playlist "${playlistKey}" (${playlistName}) with ${files.length} track(s):`);
   files.forEach((f) => console.log(`  - ${f}`));
+  if (Object.keys(playlists).length > 1) {
+    console.log(`\nTotal playlists in tracks.js: ${Object.keys(playlists).length}`);
+    Object.entries(playlists).forEach(([k, p]) => {
+      console.log(`  [${k}] "${p.name}" — ${p.tracks.length} tracks`);
+    });
+  }
 } catch (err) {
   if (err.code === 'ENOENT') {
     console.error('Error: assets/ directory not found.');
