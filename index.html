@@ -3246,22 +3246,31 @@ function computePlaylistDuration(tracks) {
   // Show track count immediately
   setTextSafe(metaEl, `${tracks.length} tracks`);
 
-  // Load durations in parallel
-  const durationPromises = tracks.map((track) => {
-    return new Promise((resolve) => {
-      const audio = new Audio();
-      audio.preload = 'metadata';
-      audio.addEventListener('loadedmetadata', () => {
-        resolve(isFinite(audio.duration) ? audio.duration : 0);
-        audio.src = '';
-      });
-      audio.addEventListener('error', () => resolve(0));
-      audio.src = track.path;
-    });
-  });
+  // Load durations sequentially to avoid disrupting active audio on mobile
+  async function loadDurations() {
+    let totalSeconds = 0;
 
-  Promise.all(durationPromises).then((durations) => {
-    const totalSeconds = Math.floor(durations.reduce((sum, d) => sum + d, 0));
+    for (const track of tracks) {
+      const duration = await new Promise((resolve) => {
+        const audio = new Audio();
+        audio.preload = 'metadata';
+        audio.addEventListener('loadedmetadata', () => {
+          const d = isFinite(audio.duration) ? audio.duration : 0;
+          audio.src = '';
+          audio.remove();
+          resolve(d);
+        });
+        audio.addEventListener('error', () => {
+          audio.src = '';
+          audio.remove();
+          resolve(0);
+        });
+        audio.src = track.path;
+      });
+      totalSeconds += duration;
+    }
+
+    totalSeconds = Math.floor(totalSeconds);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const secs = totalSeconds % 60;
@@ -3274,7 +3283,9 @@ function computePlaylistDuration(tracks) {
     }
 
     setTextSafe(metaEl, `${tracks.length} tracks \u00B7 ${timeStr}`);
-  });
+  }
+
+  loadDurations();
 }
 
 function generateBubbles() {
