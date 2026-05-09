@@ -1351,16 +1351,9 @@ class AudioPipeline {
         this._gainNode.connect(this._context.destination);
         this._webAudioAvailable = true;
 
-        // Auto-resume AudioContext when iOS/mobile interrupts it
-        this._context.addEventListener('statechange', () => {
-          if (this._context.state === 'interrupted' || this._context.state === 'suspended') {
-            this._context.resume().catch(() => {});
-          }
-        });
-
-        // Also resume on visibility change (belt-and-suspenders for mobile)
+        // Resume AudioContext when user returns to the page
         document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible' && this._context.state !== 'running') {
+          if (document.visibilityState === 'visible' && this._context.state === 'suspended') {
             this._context.resume().catch(() => {});
           }
         });
@@ -1368,6 +1361,20 @@ class AudioPipeline {
     } catch (e) {
       this._webAudioAvailable = false;
     }
+  }
+
+  /**
+   * Check if we should use Web Audio routing.
+   * On iOS/mobile, we skip routing audio through the AudioContext
+   * to allow background playback when the screen is locked.
+   * @returns {boolean}
+   */
+  shouldRouteAudio() {
+    if (!this._webAudioAvailable) return false;
+    // Detect iOS/iPadOS — these suspend AudioContext on screen lock
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    return !isIOS;
   }
 
   /**
@@ -1771,14 +1778,14 @@ class PlayerEngine {
     this._audio.preload = 'auto';
     this._audio.load();
 
-    // Connect to Web Audio pipeline on first play
-    if (!this._audioConnected && this._audioPipeline.isWebAudioAvailable()) {
+    // Connect to Web Audio pipeline on first play (skip on iOS for background playback)
+    if (!this._audioConnected && this._audioPipeline.shouldRouteAudio()) {
       this._audioPipeline.connect(this._audio);
       this._audioConnected = true;
     }
 
-    // Apply cached gain or default
-    if (this._gainNormalization) {
+    // Apply cached gain or default (only when routed through Web Audio)
+    if (this._gainNormalization && this._audioConnected) {
       const cachedGain = this._audioPipeline.getCachedGain(track.filename);
       if (cachedGain) {
         this._audioPipeline.setGain(cachedGain);
@@ -2069,7 +2076,7 @@ class PlayerEngine {
 
   _applyVolume() {
     const effectiveVolume = this._muted ? 0 : this._volume;
-    if (this._audioPipeline.isWebAudioAvailable()) {
+    if (this._audioConnected) {
       this._audioPipeline.setVolume(effectiveVolume);
     } else {
       this._audio.volume = effectiveVolume;
@@ -2878,6 +2885,8 @@ async function initApp() {
   function initVUVisualizer() {
     const pipeline = playerEngine.getAudioPipeline();
     if (!pipeline || !pipeline.isWebAudioAvailable()) return;
+    // Only init visualizer if audio is actually routed through Web Audio
+    if (!pipeline.shouldRouteAudio()) return;
 
     const ctx = pipeline.getContext();
     if (!ctx) return;
