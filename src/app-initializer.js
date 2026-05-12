@@ -418,6 +418,26 @@ async function initApp() {
   // Set up keyboard navigation
   setupKeyboardNavigation(ui, playerEngine, songListRenderer, tracks);
 
+  // Set up share button
+  const shareBtn = document.getElementById('btn-share');
+  if (shareBtn && (isShareSupported() || isClipboardSupported())) {
+    shareBtn.removeAttribute('hidden');
+    shareBtn.addEventListener('click', () => {
+      const currentTrack = playerEngine.getCurrentTrack();
+      shareTrack({
+        trackTitle: currentTrack ? currentTrack.title : null,
+        trackFilename: currentTrack ? currentTrack.filename : null,
+        onSuccess: (method) => {
+          const msg = method === 'copied' ? 'Link copied to clipboard' : 'Shared!';
+          uiController.showError(msg, 'info');
+        },
+        onError: () => {
+          uiController.showError('Could not share', 'error');
+        },
+      });
+    });
+  }
+
   // Hide loading
   hidLoading(ui);
 }
