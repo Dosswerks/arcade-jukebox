@@ -2791,6 +2791,16 @@ async function initApp() {
     ui.loadingOverlay.setAttribute('aria-hidden', 'false');
   }
 
+  // Resolve PLAYLISTS → TRACKS
+  // tracks.js may define window.PLAYLISTS (playlist-aware format) instead of window.TRACKS.
+  // Resolve the active playlist into the flat TRACKS array the rest of the app expects.
+  if (typeof window.TRACKS === 'undefined' && typeof window.PLAYLISTS !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const playlistKey = params.get('playlist') || 'default';
+    const playlist = window.PLAYLISTS[playlistKey] || window.PLAYLISTS['default'];
+    window.TRACKS = playlist ? playlist.tracks : [];
+  }
+
   // Fallback: if tracks.js failed to load (e.g., file:// CORS block),
   // default to empty array so the app shows "Empty Library" gracefully
   if (typeof window.TRACKS === 'undefined') {
