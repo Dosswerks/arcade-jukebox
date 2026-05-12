@@ -183,9 +183,8 @@ html, body {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center;
   position: relative; z-index: var(--z-base);
-  background: radial-gradient(ellipse at 50% 70%, rgba(255,140,0,0.25) 0%, rgba(255,100,0,0.1) 50%, transparent 85%);
+  background: radial-gradient(ellipse at 50% 70%, rgba(255,140,0,0.06) 0%, transparent 70%);
   overflow: hidden;
-  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
 }
 
 /* Inner border of arch tube — separate element positioned on #jukebox */
@@ -208,35 +207,6 @@ html, body {
   height: 3px;
   background: rgba(255,140,0,0.3);
   z-index: var(--z-content);
-}
-
-/* --- Playlist Header --- */
-#playlist-header {
-  flex: 0 0 auto;
-  background: linear-gradient(180deg, rgba(255,140,0,0.85) 0%, rgba(200,100,0,0.85) 100%);
-  padding: 6px calc(var(--tube-width) + 4px);
-  text-align: center;
-  z-index: var(--z-content);
-  border-bottom: 3px solid rgba(255,140,0,0.3);
-}
-
-#playlist-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: #0a0a0a;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  line-height: 1.2;
-}
-
-#playlist-meta {
-  display: block;
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(10,10,10,0.7);
-  letter-spacing: 0.5px;
-  line-height: 1.4;
-  margin-top: 2px;
 }
 
 /* --- Apex Badge ("D") — on top of tubes --- */
@@ -262,9 +232,9 @@ html, body {
 /* --- VU Visualizer Canvas --- */
 #vu-canvas {
   position: absolute;
-  left: 0; right: 0;
+  left: var(--tube-width); right: var(--tube-width);
   top: 0; bottom: 0;
-  width: 100%;
+  width: calc(100% - var(--tube-width) - var(--tube-width));
   height: 100%;
   pointer-events: none;
   z-index: 0;
@@ -823,12 +793,6 @@ html, body {
     <!-- Separator line between record area and song list -->
     <div id="arch-separator" aria-hidden="true"></div>
 
-    <!-- Playlist Header -->
-    <div id="playlist-header">
-        <span id="playlist-name"></span>
-        <span id="playlist-meta"></span>
-    </div>
-
     <!-- Song List -->
     <div id="song-list"></div>
 
@@ -866,6 +830,9 @@ html, body {
             </button>
             <button class="mode-btn" id="btn-shuffle" aria-label="Shuffle: off">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16,3 21,3 21,8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21,16 21,21 16,21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+            </button>
+            <button class="mode-btn" id="btn-share" aria-label="Share track" hidden>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             </button>
         </div>
 
@@ -923,7 +890,7 @@ function deriveTitle(filename) {
     .replace(/\.mp3$/i, '')       // Remove extension
     .replace(/[-_]/g, ' ')        // Replace hyphens/underscores with spaces
     .toLowerCase()                // Normalize to lowercase first
-    .replace(/(^|\s)\w/g, (c) => c.toUpperCase()); // Capitalize first letter of each word (space/start boundary only)
+    .replace(/\b\w/g, (c) => c.toUpperCase()); // Capitalize first letter of each word
 }
 
     // === NATURAL SORT ===
@@ -963,7 +930,6 @@ function parseQueryParams() {
   return {
     track: params.get('track') || null,
     game: params.get('game') || null,
-    playlist: params.get('playlist') || null,
   };
 }
 
@@ -1354,20 +1320,6 @@ class AudioPipeline {
     } catch (e) {
       this._webAudioAvailable = false;
     }
-  }
-
-  /**
-   * Check if we should use Web Audio routing.
-   * On iOS/mobile, we skip routing audio through the AudioContext
-   * to allow background playback when the screen is locked.
-   * @returns {boolean}
-   */
-  shouldRouteAudio() {
-    if (!this._webAudioAvailable) return false;
-    // Detect iOS/iPadOS — these suspend AudioContext on screen lock
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    return !isIOS;
   }
 
   /**
@@ -1771,14 +1723,14 @@ class PlayerEngine {
     this._audio.preload = 'auto';
     this._audio.load();
 
-    // Connect to Web Audio pipeline on first play (skip on iOS for background playback)
-    if (!this._audioConnected && this._audioPipeline.shouldRouteAudio()) {
+    // Connect to Web Audio pipeline on first play
+    if (!this._audioConnected && this._audioPipeline.isWebAudioAvailable()) {
       this._audioPipeline.connect(this._audio);
       this._audioConnected = true;
     }
 
-    // Apply cached gain or default (only when routed through Web Audio)
-    if (this._gainNormalization && this._audioConnected) {
+    // Apply cached gain or default
+    if (this._gainNormalization) {
       const cachedGain = this._audioPipeline.getCachedGain(track.filename);
       if (cachedGain) {
         this._audioPipeline.setGain(cachedGain);
@@ -1803,16 +1755,6 @@ class PlayerEngine {
       });
     }
 
-    // Update Media Session for background/lock-screen playback
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: track.title,
-        artist: 'Dosswerks',
-        album: 'Arcade Jukebox',
-      });
-      navigator.mediaSession.playbackState = 'playing';
-    }
-
     this._persistState();
     this._schedulePrefetch();
   }
@@ -1821,9 +1763,6 @@ class PlayerEngine {
     if (this._status !== 'playing' && this._status !== 'buffering') return;
     this._audio.pause();
     this._status = 'paused';
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.playbackState = 'paused';
-    }
     this._emit('pause');
   }
 
@@ -2069,7 +2008,7 @@ class PlayerEngine {
 
   _applyVolume() {
     const effectiveVolume = this._muted ? 0 : this._volume;
-    if (this._audioConnected) {
+    if (this._audioPipeline.isWebAudioAvailable()) {
       this._audioPipeline.setVolume(effectiveVolume);
     } else {
       this._audio.volume = effectiveVolume;
@@ -2081,11 +2020,6 @@ class PlayerEngine {
   }
 
   _checkPrefetch() {
-    // Skip prefetch on iOS — extra Audio elements disrupt the active audio session
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (isIOS) return;
-
     // Prefetch next track at 75% progress
     if (!this._prefetchAudio && this._audio.duration) {
       const progress = this._audio.currentTime / this._audio.duration;
@@ -2260,7 +2194,7 @@ class SongListRenderer {
    * Update the selected (keyboard-focused) track.
    * @param {number} index - Index of focused track (-1 for none)
    */
-  setSelectedTrack(index, { focus = true } = {}) {
+  setSelectedTrack(index) {
     // Remove previous selection
     if (this._selectedIndex >= 0) {
       const prev = this._container.querySelector(`[data-index="${this._selectedIndex}"]`);
@@ -2280,7 +2214,7 @@ class SongListRenderer {
         current.classList.add('song-item--selected');
         current.setAttribute('aria-selected', 'true');
         current.setAttribute('tabindex', '0');
-        if (focus) current.focus();
+        current.focus();
       }
     }
   }
@@ -2762,6 +2696,83 @@ function setupTapDetection(element, onTap) {
   }, { passive: true });
 }
 
+    // === SOCIAL SHARING ===
+/**
+ * Social Sharing
+ * Provides Web Share API integration for sharing the currently playing track.
+ * Uses navigator.share when available, with a clipboard fallback for desktop.
+ */
+
+const JUKEBOX_URL = 'https://dosswerks.github.io/arcade-jukebox/';
+
+/**
+ * Determines if the Web Share API is available.
+ * @returns {boolean}
+ */
+function isShareSupported() {
+  return typeof navigator !== 'undefined' && !!navigator.share;
+}
+
+/**
+ * Determines if the Clipboard API is available for fallback.
+ * @returns {boolean}
+ */
+function isClipboardSupported() {
+  return typeof navigator !== 'undefined' && !!navigator.clipboard?.writeText;
+}
+
+/**
+ * Builds a shareable URL for a given track filename.
+ * @param {string|null} filename - The track filename (e.g., "Dagon.mp3")
+ * @returns {string} - Full URL with ?track= param, or base URL if no track
+ */
+function buildShareURL(filename) {
+  if (!filename) return JUKEBOX_URL;
+  const url = new URL(JUKEBOX_URL);
+  url.searchParams.set('track', filename);
+  return url.toString();
+}
+
+/**
+ * Shares the currently playing track via the Web Share API.
+ * Falls back to copying the link to clipboard on unsupported platforms.
+ *
+ * @param {object} options
+ * @param {string|null} options.trackTitle - Display title of the current track
+ * @param {string|null} options.trackFilename - Filename for deep link
+ * @param {function} [options.onSuccess] - Called after successful share/copy
+ * @param {function} [options.onError] - Called on failure
+ */
+async function shareTrack({ trackTitle, trackFilename, onSuccess, onError }) {
+  const url = buildShareURL(trackFilename);
+  const title = trackTitle
+    ? `🎵 ${trackTitle} — Dosswerks Arcade Jukebox`
+    : 'Dosswerks Arcade Jukebox';
+  const text = trackTitle
+    ? `Check out "${trackTitle}" on the Dosswerks Arcade Jukebox!`
+    : 'Check out the Dosswerks Arcade Jukebox!';
+
+  if (isShareSupported()) {
+    try {
+      await navigator.share({ title, text, url });
+      if (onSuccess) onSuccess('shared');
+    } catch (e) {
+      // User cancelled share — not an error
+      if (e.name === 'AbortError') return;
+      if (onError) onError(e);
+    }
+  } else if (isClipboardSupported()) {
+    try {
+      await navigator.clipboard.writeText(url);
+      if (onSuccess) onSuccess('copied');
+    } catch (e) {
+      if (onError) onError(e);
+    }
+  } else {
+    if (onError) onError(new Error('Sharing not supported'));
+  }
+}
+
     // === APP INITIALIZER ===
 /**
  * App Initializer
@@ -2782,50 +2793,29 @@ async function initApp() {
 
   // Fallback: if tracks.js failed to load (e.g., file:// CORS block),
   // default to empty array so the app shows "Empty Library" gracefully
-  if (typeof window.PLAYLISTS === 'undefined' && typeof window.TRACKS === 'undefined') {
-    window.PLAYLISTS = { default: { name: '', tracks: [] } };
+  if (typeof window.TRACKS === 'undefined') {
+    window.TRACKS = [];
   }
 
-  // Parse URL query parameters
-  const params = parseQueryParams();
-
-  // Resolve playlist: ?playlist=<key> or fall back to "default"
-  let playlistName = '';
-  let trackFilenames = [];
-
-  if (window.PLAYLISTS && typeof window.PLAYLISTS === 'object') {
-    const playlistKey = params.playlist || 'default';
-    const playlist = window.PLAYLISTS[playlistKey] || window.PLAYLISTS['default'];
-    if (playlist) {
-      playlistName = playlist.name || '';
-      trackFilenames = Array.isArray(playlist.tracks) ? playlist.tracks : [];
-    }
-  } else if (Array.isArray(window.TRACKS)) {
-    // Legacy support: plain TRACKS array
-    trackFilenames = window.TRACKS;
+  // Check for TRACKS global
+  if (!Array.isArray(window.TRACKS)) {
+    showFatalError(ui, 'Music library could not be loaded');
+    return;
   }
 
-  // Set playlist header
-  const playlistNameEl = document.getElementById('playlist-name');
-  if (playlistNameEl && playlistName) {
-    setTextSafe(playlistNameEl, playlistName);
-  } else if (playlistNameEl) {
-    // Hide header if no name
-    const playlistHeader = document.getElementById('playlist-header');
-    if (playlistHeader) playlistHeader.style.display = 'none';
-  }
-
-  // Check for tracks
-  if (!Array.isArray(trackFilenames) || trackFilenames.length === 0) {
+  if (window.TRACKS.length === 0) {
     hidLoading(ui);
     showEmptyLibrary(ui);
     return;
   }
 
+  // Parse URL query parameters
+  const params = parseQueryParams();
+
   // Process manifest (ID3 + title derivation + sort)
   let tracks;
   try {
-    tracks = await processManifest(trackFilenames);
+    tracks = await processManifest(window.TRACKS);
   } catch (e) {
     showFatalError(ui, 'Failed to process music library');
     return;
@@ -2883,8 +2873,6 @@ async function initApp() {
   function initVUVisualizer() {
     const pipeline = playerEngine.getAudioPipeline();
     if (!pipeline || !pipeline.isWebAudioAvailable()) return;
-    // Only init visualizer if audio is actually routed through Web Audio
-    if (!pipeline.shouldRouteAudio()) return;
 
     const ctx = pipeline.getContext();
     if (!ctx) return;
@@ -3022,9 +3010,6 @@ async function initApp() {
   // Render song list
   songListRenderer.render(tracks);
 
-  // Ensure list starts at the top
-  ui.songListContainer.scrollTop = 0;
-
   // Generate bubble elements
   generateBubbles();
 
@@ -3044,7 +3029,7 @@ async function initApp() {
       playerEngine.setSelectedIndex(trackIdx);
     }
   } else if (playerState.selectedTrackIndex >= 0) {
-    songListRenderer.setSelectedTrack(playerState.selectedTrackIndex, { focus: false });
+    songListRenderer.setSelectedTrack(playerState.selectedTrackIndex);
   }
 
   // Wire up Player Engine events
@@ -3116,28 +3101,6 @@ async function initApp() {
   playerEngine.on('shuffleChange', (data) => {
     uiController.setShuffleButtonState(data.enabled);
   });
-
-  // Media Session API — enables lock-screen/notification controls and background playback
-  if ('mediaSession' in navigator) {
-    navigator.mediaSession.setActionHandler('play', () => {
-      const s = playerEngine.getState();
-      if (s.status === 'paused') {
-        playerEngine.resume();
-      } else if (s.status === 'idle' || s.status === 'error') {
-        const idx = s.selectedTrackIndex >= 0 ? s.selectedTrackIndex : 0;
-        playerEngine.play(idx);
-      }
-    });
-    navigator.mediaSession.setActionHandler('pause', () => {
-      playerEngine.pause();
-    });
-    navigator.mediaSession.setActionHandler('previoustrack', () => {
-      playerEngine.skipBack();
-    });
-    navigator.mediaSession.setActionHandler('nexttrack', () => {
-      playerEngine.skipForward();
-    });
-  }
 
   // Wire up transport controls
   ui.playPauseBtn.addEventListener('click', () => {
@@ -3231,8 +3194,25 @@ async function initApp() {
   // Set up keyboard navigation
   setupKeyboardNavigation(ui, playerEngine, songListRenderer, tracks);
 
-  // Compute and display playlist total time
-  computePlaylistDuration(tracks);
+  // Set up share button
+  const shareBtn = document.getElementById('btn-share');
+  if (shareBtn && (isShareSupported() || isClipboardSupported())) {
+    shareBtn.removeAttribute('hidden');
+    shareBtn.addEventListener('click', () => {
+      const currentTrack = playerEngine.getCurrentTrack();
+      shareTrack({
+        trackTitle: currentTrack ? currentTrack.title : null,
+        trackFilename: currentTrack ? currentTrack.filename : null,
+        onSuccess: (method) => {
+          const msg = method === 'copied' ? 'Link copied to clipboard' : 'Shared!';
+          uiController.showError(msg, 'info');
+        },
+        onError: () => {
+          uiController.showError('Could not share', 'error');
+        },
+      });
+    });
+  }
 
   // Hide loading
   hidLoading(ui);
@@ -3287,67 +3267,6 @@ function hidLoading(ui) {
   if (ui.loadingOverlay) {
     ui.loadingOverlay.classList.remove('visible');
     ui.loadingOverlay.setAttribute('aria-hidden', 'true');
-  }
-}
-
-/**
- * Asynchronously loads duration metadata for all tracks and displays
- * the total playlist time in the playlist header.
- * On iOS/mobile, skips duration loading to avoid interfering with playback.
- * @param {Array<{path: string}>} tracks
- */
-function computePlaylistDuration(tracks) {
-  const metaEl = document.getElementById('playlist-meta');
-  if (!metaEl) return;
-
-  // Show track count immediately
-  setTextSafe(metaEl, `${tracks.length} tracks`);
-
-  // Detect iOS/iPadOS — creating Audio elements disrupts the active audio session
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  if (isIOS) return;
-
-  // On desktop, load durations after a short delay to avoid competing with initial playback
-  setTimeout(() => {
-    let loaded = 0;
-    let totalSeconds = 0;
-
-    tracks.forEach((track) => {
-      const audio = new Audio();
-      audio.preload = 'metadata';
-      audio.addEventListener('loadedmetadata', () => {
-        if (isFinite(audio.duration)) totalSeconds += audio.duration;
-        audio.src = '';
-        loaded++;
-        if (loaded === tracks.length) {
-          displayDuration(tracks.length, totalSeconds);
-        }
-      });
-      audio.addEventListener('error', () => {
-        loaded++;
-        if (loaded === tracks.length) {
-          displayDuration(tracks.length, totalSeconds);
-        }
-      });
-      audio.src = track.path;
-    });
-  }, 2000);
-
-  function displayDuration(count, seconds) {
-    const totalSec = Math.floor(seconds);
-    const hours = Math.floor(totalSec / 3600);
-    const minutes = Math.floor((totalSec % 3600) / 60);
-    const secs = totalSec % 60;
-
-    let timeStr;
-    if (hours > 0) {
-      timeStr = `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    } else {
-      timeStr = `${minutes}:${secs.toString().padStart(2, '0')}`;
-    }
-
-    setTextSafe(metaEl, `${count} tracks \u00B7 ${timeStr}`);
   }
 }
 

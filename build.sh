@@ -31,7 +31,7 @@ fi
 echo "    </style>" >> "$OUTPUT"
 echo "</head>" >> "$OUTPUT"
 
-# HTML body from template
+# HTML body from template — keep the tracks.js script tag as-is
 if [ -f "$SRC_DIR/index.html" ]; then
     cat "$SRC_DIR/index.html" >> "$OUTPUT"
 fi
@@ -65,6 +65,7 @@ JS_MODULES=(
     "visibility-controller.js"
     "keyboard-navigation.js"
     "touch-handler.js"
+    "social-sharing.js"
     "app-initializer.js"
 )
 
