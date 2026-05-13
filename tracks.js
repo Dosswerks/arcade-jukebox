@@ -15,6 +15,7 @@ window.PLAYLISTS = {
       'Barrel Bears.mp3',
       'Can\'t Drive 55.mp3',
       'Dagon.mp3',
+      'Fish Food - Level 1.mp3',
       'Innsmouth Invaders - Confrontation.mp3',
       'Innsmouth Invaders - Onslaught.mp3',
       'Krampus In The Village.mp3',
