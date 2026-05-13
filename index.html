@@ -3204,6 +3204,75 @@ async function initApp() {
   // Set up keyboard navigation
   setupKeyboardNavigation(ui, playerEngine, songListRenderer, tracks);
 
+  // Media Session API — enables lock-screen playback on iOS/Android
+  function setupMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+
+    navigator.mediaSession.setActionHandler('play', () => {
+      const s = playerEngine.getState();
+      if (s.status === 'paused') {
+        playerEngine.resume();
+      } else if (s.status === 'idle') {
+        const idx = s.selectedTrackIndex >= 0 ? s.selectedTrackIndex : 0;
+        playerEngine.play(idx);
+      }
+    });
+
+    navigator.mediaSession.setActionHandler('pause', () => {
+      playerEngine.pause();
+    });
+
+    navigator.mediaSession.setActionHandler('previoustrack', () => {
+      playerEngine.skipBack();
+    });
+
+    navigator.mediaSession.setActionHandler('nexttrack', () => {
+      playerEngine.skipForward();
+    });
+
+    navigator.mediaSession.setActionHandler('seekto', (details) => {
+      if (details.seekTime != null) {
+        const duration = playerEngine.getProgress().duration;
+        if (duration > 0) {
+          playerEngine.seekTo(details.seekTime / duration);
+        }
+      }
+    });
+  }
+
+  function updateMediaSessionMetadata(track) {
+    if (!('mediaSession' in navigator) || !track) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title,
+      artist: 'Dosswerks',
+      album: 'Dosswerks Arcade OST',
+    });
+  }
+
+  function updateMediaSessionState(state) {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.playbackState = state;
+  }
+
+  setupMediaSession();
+
+  // Update media session on player events
+  playerEngine.on('trackChange', (data) => {
+    updateMediaSessionMetadata(data.track);
+  });
+
+  playerEngine.on('play', () => {
+    updateMediaSessionState('playing');
+  });
+
+  playerEngine.on('pause', () => {
+    updateMediaSessionState('paused');
+  });
+
+  playerEngine.on('stop', () => {
+    updateMediaSessionState('none');
+  });
+
   // Set up share button
   const shareBtn = document.getElementById('btn-share');
   if (shareBtn && (isShareSupported() || isClipboardSupported())) {
