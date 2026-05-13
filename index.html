@@ -389,6 +389,28 @@ html, body {
   to { transform: rotate(360deg); }
 }
 
+/* --- Playlist Header --- */
+#playlist-header {
+  flex: 0 0 auto;
+  padding: 8px calc(var(--tube-width) + 4px) 6px;
+  background: linear-gradient(180deg, #ffaa00, #cc8800);
+  text-align: center;
+  z-index: var(--z-content);
+}
+
+#playlist-header .playlist-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111;
+  letter-spacing: 0.5px;
+}
+
+#playlist-header .playlist-duration {
+  font-size: 10px;
+  color: #333;
+  margin-top: 1px;
+}
+
 /* --- Song List --- */
 #song-list {
   flex: 1 1 auto;
@@ -792,6 +814,12 @@ html, body {
 
     <!-- Separator line between record area and song list -->
     <div id="arch-separator" aria-hidden="true"></div>
+
+    <!-- Playlist Header -->
+    <div id="playlist-header">
+        <div class="playlist-name" id="playlist-name"></div>
+        <div class="playlist-duration" id="playlist-duration"></div>
+    </div>
 
     <!-- Song List -->
     <div id="song-list"></div>
@@ -2794,11 +2822,13 @@ async function initApp() {
   // Resolve PLAYLISTS → TRACKS
   // tracks.js may define window.PLAYLISTS (playlist-aware format) instead of window.TRACKS.
   // Resolve the active playlist into the flat TRACKS array the rest of the app expects.
+  let playlistName = '';
   if (typeof window.TRACKS === 'undefined' && typeof window.PLAYLISTS !== 'undefined') {
     const params = new URLSearchParams(window.location.search);
     const playlistKey = params.get('playlist') || 'default';
     const playlist = window.PLAYLISTS[playlistKey] || window.PLAYLISTS['default'];
     window.TRACKS = playlist ? playlist.tracks : [];
+    playlistName = playlist ? (playlist.name || '') : '';
   }
 
   // Fallback: if tracks.js failed to load (e.g., file:// CORS block),
@@ -3016,6 +3046,41 @@ async function initApp() {
       uiController.updateProgress(progress.elapsed, progress.duration);
     },
   });
+
+  // Populate playlist header
+  const playlistNameEl = document.getElementById('playlist-name');
+  const playlistDurationEl = document.getElementById('playlist-duration');
+  if (playlistNameEl && playlistName) {
+    playlistNameEl.textContent = playlistName;
+  }
+
+  // Calculate total playlist duration from audio metadata
+  if (playlistDurationEl && tracks.length > 0) {
+    Promise.all(
+      tracks.map((track) => new Promise((resolve) => {
+        const a = new Audio();
+        a.preload = 'metadata';
+        a.addEventListener('loadedmetadata', () => {
+          resolve(a.duration || 0);
+          a.src = '';
+        });
+        a.addEventListener('error', () => resolve(0));
+        a.src = track.path;
+      }))
+    ).then((durations) => {
+      const totalSeconds = Math.floor(durations.reduce((sum, d) => sum + d, 0));
+      const hrs = Math.floor(totalSeconds / 3600);
+      const mins = Math.floor((totalSeconds % 3600) / 60);
+      const secs = totalSeconds % 60;
+      let display = '';
+      if (hrs > 0) {
+        display = `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} total`;
+      } else {
+        display = `${mins}:${String(secs).padStart(2, '0')} total`;
+      }
+      playlistDurationEl.textContent = display;
+    });
+  }
 
   // Render song list
   songListRenderer.render(tracks);
