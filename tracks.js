@@ -10,7 +10,7 @@
  */
 window.PLAYLISTS = {
   "default": {
-    name: "Dosswerks Arcade OST",
+    name: "Dosswerks Arcade Jukebox",
     tracks: [
       'Barrel Bears.mp3',
       'Cant Drive 55.mp3',
