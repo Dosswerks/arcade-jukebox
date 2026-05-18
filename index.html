@@ -3041,6 +3041,14 @@ async function initApp() {
     },
     onVisible: () => {
       animController.resume();
+      // Resume AudioContext if iOS suspended it during screen lock
+      const pipeline = playerEngine.getAudioPipeline();
+      if (pipeline && pipeline.isWebAudioAvailable()) {
+        const ctx = pipeline.getContext();
+        if (ctx && ctx.state === 'suspended') {
+          ctx.resume();
+        }
+      }
       // Resync progress bar
       const progress = playerEngine.getProgress();
       uiController.updateProgress(progress.elapsed, progress.duration);
