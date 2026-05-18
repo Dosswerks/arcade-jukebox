@@ -23,6 +23,8 @@ window.PLAYLISTS = {
       'Fish Food - Tank 6.mp3',
       'Innsmouth Invaders - Confrontation.mp3',
       'Innsmouth Invaders - Onslaught.mp3',
+      'Jasper Junction Level Complete.mp3',
+      'Jasper Junction Roundup.mp3',
       'Krampus In The Village.mp3',
       'Mountains Of Madness - Campsite.mp3',
       'Mountains Of Madness - Ice Cave.mp3',
